@@ -25,9 +25,9 @@ const PostgresDataSource: DataSourceOptions = {
   // rejectUnauthorized: false,
   // },
   //dropSchema: true,
-  synchronize: true,
+  synchronize: false,
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  migrations: ['./dist/migration/*{.ts,.js}'],
+  migrations: [__dirname + '/../migrations/*{.ts,.js}'],
 };
 
 export const postgresDataSourceConfig = registerAs(

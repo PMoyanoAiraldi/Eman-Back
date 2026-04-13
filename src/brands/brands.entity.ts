@@ -1,13 +1,17 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Products } from 'src/products/products.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'brands' })
 export class Brands {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id: string;
 
-  @Column()
+  @Column({ length: 255, nullable: false})
   name: string;
 
-  @Column()
+  @Column({ default: true })
   state: boolean;
+
+  @OneToMany(() => Products, (product) => product.brand)
+  products: Products[];
 }

@@ -7,6 +7,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { postgresDataSourceConfig } from './config/data-source';
 import { DataSourceOptions } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SizesModule } from './sizes/sizes.module';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       }
     }),
     BrandsModule,
-    CategoriesModule
+    CategoriesModule,
+    SizesModule
   ],
   controllers: [AppController],
   providers: [AppService],
