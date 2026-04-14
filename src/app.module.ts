@@ -8,6 +8,14 @@ import { postgresDataSourceConfig } from './config/data-source';
 import { DataSourceOptions } from 'typeorm';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SizesModule } from './sizes/sizes.module';
+import { ImagesModule } from './images/images.module';
+import { InstallmentConfig } from './installmentConfig/installmentConfig.entity';
+import { OrderModule } from './order/order.module';
+import { OrderDetailModule } from './orderDetail/orderDetail.module';
+import { PaymentsModule } from './payments/payments.module';
+import { ProductsModule } from './products/products.module';
+import { ProductSizesModule } from './productSizes/productSizes.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -25,7 +33,17 @@ import { SizesModule } from './sizes/sizes.module';
     }),
     BrandsModule,
     CategoriesModule,
-    SizesModule
+    SizesModule,
+    ImagesModule,
+    InstallmentConfig,
+    OrderModule,
+    OrderDetailModule,
+    PaymentsModule,
+    ProductsModule,
+    ProductSizesModule,
+    SizesModule,
+    UsersModule
+
   ],
   controllers: [AppController],
   providers: [AppService],
