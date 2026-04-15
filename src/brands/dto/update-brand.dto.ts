@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
+import {  IsNotEmpty, IsString, MaxLength } from "class-validator";
 
 
 export class UpdateBrandDto {
@@ -9,10 +9,5 @@ export class UpdateBrandDto {
     @IsNotEmpty()
     @MaxLength(255)
     name: string;
-
-    @ApiProperty({ description: "Estado de la marca", required: false })
-    @IsOptional()
-    @IsBoolean()
-    state: boolean;
 
 }
