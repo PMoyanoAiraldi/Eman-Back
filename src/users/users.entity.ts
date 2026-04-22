@@ -40,6 +40,12 @@ export class Users {
     })
     rol: rolEnum;
 
+    @Column({ type: 'varchar', nullable: true, default: null })
+    refreshToken: string | null;
+
+    @Column({ type: 'timestamp', nullable: true, default: null })
+    refreshTokenExpiry: Date | null;
+
     @OneToMany(() => Order, (order) => order.user)
     orders: Order[];
 }

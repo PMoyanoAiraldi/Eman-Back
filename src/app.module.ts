@@ -16,6 +16,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { ProductsModule } from './products/products.module';
 import { ProductSizesModule } from './productSizes/productSizes.module';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -42,7 +43,8 @@ import { UsersModule } from './users/users.module';
     ProductsModule,
     ProductSizesModule,
     SizesModule,
-    UsersModule
+    UsersModule,
+    AuthModule
 
   ],
   controllers: [AppController],
