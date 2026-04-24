@@ -192,22 +192,6 @@ async refresh(refreshToken: string, res: any): Promise<{ accessToken: string }> 
     return { accessToken };
 }
 
-
-
-    // async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<{ message: string }> {
-    //     const user = await this.usersRepository.findOne({ where: { id: userId } });
-    
-    //     if (!user || !(await bcrypt.compare(oldPassword, user.password))) {
-    //         throw new BadRequestException('Contraseña actual incorrecta.');
-    //     }
-    
-    //     user.password = await bcrypt.hash(newPassword, 10);
-    //     user.mustChangePassword = false;
-    
-    //     await this.usersRepository.save(user);
-    
-    //     return { message: 'Contraseña cambiada correctamente' };
-    // }
     
     
     }
