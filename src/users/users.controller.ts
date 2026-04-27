@@ -1,25 +1,27 @@
 import { Body, Controller, Get, Param, Patch, Query, UseGuards } from "@nestjs/common";
-import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
+import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { UsersService } from "./users.service";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guards/roles.guard";
 import { Roles } from "src/auth/decorators/roles.decorator";
 import { rolEnum, Users } from "./users.entity";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { UserResponseDto } from "./dto/response-user.dto";
 
 @ApiTags('Users')
 @Controller("users")
 export class UsersController {
     constructor(
-        private readonly usersService: UsersService,
-        @InjectRepository(Users)
-        private readonly userRepository: Repository<Users>,
+        private readonly usersService: UsersService
     ) { }
 
     @Get()
     @ApiOperation({ summary: 'Listar todos los usuarios' })
-    @ApiResponse({ status: 200, description: 'Lista de usuarios', type: [Users] })
+    @ApiResponse({ status: 200, description: 'Lista de usuarios', type: [UserResponseDto] })
+    @ApiQuery({ name: 'page', required: false, example: '1' })
+    @ApiQuery({ name: 'limit', required: false, example: '100' })
+    @ApiQuery({ name: 'state', required: false, enum: ['active', 'inactive'] })
+    @ApiQuery({ name: 'rol', required: false, enum: rolEnum })
+    @ApiQuery({ name: 'search', required: false })
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
@@ -30,28 +32,13 @@ export class UsersController {
         @Query('rol') rol?: string,
         @Query('search') search?: string
     ) {
-        const pageNumber = Number(page) || 1;
-        const limitNumber = Math.min(Number(limit) || 100, 100);
-
-        const query = this.userRepository
-        .createQueryBuilder('user')
-        .orderBy('user.name', 'ASC')
-        .take(limitNumber)
-        .skip((pageNumber - 1) * limitNumber);
-                                            //SQL con un placeholder :state // { state: true } → el valor que reemplaza al placeholder
-        if (state === 'active') query.andWhere('user.state = :state', { state: true });
-        if (state === 'inactive') query.andWhere('user.state = :state', { state: false });
-        if (rol && rol !== 'todos') query.andWhere('user.rol = :rol', { rol });
-        if (search) query.andWhere('user.name ILIKE :search', { search: `%${search}%` });
-
-        const [users, total] = await query.getManyAndCount();
-
-        return {
-            total,
-            totalPages: Math.ceil(total / limitNumber),
-            page: pageNumber,
-            data: users,
-        };
+        return this.usersService.findAll(
+            Number(page) || 1,
+            Number(limit) || 100,
+            state,
+            rol,
+            search,
+        );
     }
 
     @Get(':id')

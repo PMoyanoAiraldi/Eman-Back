@@ -12,8 +12,45 @@ export class UsersService {
         private readonly usersRepository: Repository<Users>,
     ) { }
 
-    async findAll(): Promise<Users[]> {
-        return await this.usersRepository.find();
+    async findAll(page: number, limit: number, state?: string, rol?: string, search?: string): Promise<
+    {
+        total: number;
+        totalPages: number;
+        page: number;
+        data: Users[];
+    }
+    > {
+        const limitNumber = Math.min(limit, 100);
+
+        const query = this.usersRepository
+            .createQueryBuilder('user')
+            .select([
+                'user.id',
+                'user.name',
+                'user.email',
+                'user.address',
+                'user.city',
+                'user.phone',
+                'user.state',
+                'user.rol',
+            ])
+            .orderBy('user.name', 'ASC')
+            .take(limitNumber)
+            .skip((page - 1) * limitNumber);
+                                                        //SQL con un placeholder :state // { state: true } → el valor que reemplaza al placeholder
+        if (state === 'active') query.andWhere('user.state = :state', { state: true });
+        if (state === 'inactive') query.andWhere('user.state = :state', { state: false });
+        if (rol && rol !== 'todos') query.andWhere('user.rol = :rol', { rol });
+        if (search) query.andWhere('user.name ILIKE :search', { search: `%${search}%` });
+
+        const [users, total] = await query.getManyAndCount();
+
+        return {
+            total,
+            totalPages: Math.ceil(total / limitNumber),
+            page,
+            data: users,
+        };
     }
 
     async getUserForId(id: string): Promise<Users | null>{
