@@ -98,17 +98,17 @@ export class UsersService {
             throw new NotFoundException('Usuario no encontrado');
         }
 
+        if (oldPassword === newPassword) {
+            throw new BadRequestException('La nueva contraseña no puede ser igual a la actual');
+        }
+
         const isPasswordMatching = await bcrypt.compare(oldPassword, user.password);
         if (!isPasswordMatching) {
             throw new BadRequestException('La contraseña actual es incorrecta');
         }
 
-        if (oldPassword === newPassword) {
-            throw new BadRequestException('La nueva contraseña no puede ser igual a la actual');
-        }
-
-        user.password = await bcrypt.hash(newPassword, 10);
-        await this.usersRepository.save(user);
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await this.usersRepository.update(userId, { password: hashedPassword });
 
         return { message: 'Contraseña actualizada correctamente' };
     }

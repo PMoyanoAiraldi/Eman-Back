@@ -102,6 +102,31 @@ export class UsersController {
         return this.usersService.updateUser(userId, updateUserDto);
     }
         
+    @Patch('change-password')
+    @ApiOperation({ summary: 'Cambiar contraseña del usuario logueado' })
+    @ApiResponse({ status: 200, description: 'Contraseña actualizada correctamente' })
+    @ApiResponse({ status: 400, description: 'Contraseña actual incorrecta' })
+    @ApiBody({
+        description: 'Contraseñas',
+        schema: {
+            type: 'object',
+            required: ['oldPassword', 'newPassword'],
+            properties: {
+                oldPassword: { type: 'string' },
+                newPassword: { type: 'string' },
+            }
+        }
+    })
+    @UseGuards(JwtAuthGuard)
+    @ApiSecurity('bearer')
+    async changePassword(
+        @Req() req: any,
+        @Body('oldPassword') oldPassword: string,
+        @Body('newPassword') newPassword: string,
+    ) {
+        const userId = (req as RequestWithUser).user.id;
+        return this.usersService.changePassword(userId, oldPassword, newPassword);
+    }
 
 
     
