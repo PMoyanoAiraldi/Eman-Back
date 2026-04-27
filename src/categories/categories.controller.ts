@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { CategoriesService } from "./categories.service";
 import { ResponseCategoryDto } from "./dto/response-category.dto";
@@ -6,6 +6,10 @@ import { CreateCategoryDto } from "./dto/create-category.dto";
 import { Categories } from "./categories.entity";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
 import { UpdateCategoryStateDto } from "./dto/update-categoryState.dto";
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
+import { RolesGuard } from "src/auth/guards/roles.guard";
+import { Roles } from "src/auth/decorators/roles.decorator";
+import { rolEnum } from "src/users/users.entity";
 
 @ApiTags('Categories')
 @Controller("categories")
@@ -44,8 +48,8 @@ export class CategoriesController {
     @Get('all')
     @ApiOperation({ summary: 'Listar todas las categorías (activas e inactivas)' })
     @ApiResponse({ status: 200, description: 'Lista de categorías', type: [Categories] })
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
         async findAllForAdmin(): Promise<Categories[]> {
             return this.categoriesService.getAllCategories();
@@ -63,8 +67,8 @@ export class CategoriesController {
     @ApiOperation({ summary: 'Obtener una categoría por ID' })
     @ApiResponse({ status: 200, description: 'Categoría encontrada', type: Categories })
     @ApiResponse({ status: 404, description: 'Categoría no encontrada' })
-     // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     async findOne(@Param('id') id: string): Promise<Categories> {
         return this.categoriesService.getCategory(id);
@@ -82,8 +86,8 @@ export class CategoriesController {
     @ApiOperation({ summary: 'Modificar una categoría' })
     @ApiResponse({ status: 200, description: 'Categoría modificada', type: UpdateCategoryDto })
     @ApiResponse({ status: 404, description: 'Categoría no encontrada' })
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     @ApiBody({
         description: 'Datos para actualizar la categoría',
@@ -101,8 +105,8 @@ export class CategoriesController {
     @Patch(':id/state')
     @ApiOperation({ summary: 'Cambiar estado de categoría (activar/desactivar) - Solo Admin' })
     @ApiResponse({ status: 200, description: 'Estado actualizado correctamente' })
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     async updateState(
         @Param('id') id: string,

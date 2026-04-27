@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { SizesService } from "./sizes.service";
 import { ResponseZiseDto } from "./dto/response-size.dto";
@@ -6,6 +6,10 @@ import { CreateSizeDto } from "./dto/create-size.dto";
 import { Sizes } from "./sizes.entity";
 import { UpdateSizeDto } from "./dto/update-size.dto";
 import { UpdateSizeStateDto } from "./dto/update-sizeState.dto";
+import { Roles } from "src/auth/decorators/roles.decorator";
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
+import { RolesGuard } from "src/auth/guards/roles.guard";
+import { rolEnum } from "src/users/users.entity";
 
 @ApiTags('Sizes')
 @Controller("sizes")
@@ -43,8 +47,8 @@ export class SizesController {
     @Get('all')
     @ApiOperation({ summary: 'Listar todos los talles (activos e inactivos)' })
     @ApiResponse({ status: 200, description: 'Lista de talles', type: [Sizes] })
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     async findAllForAdmin(): Promise<Sizes[]> {
         return this.sizesService.getAllSizes();
@@ -62,8 +66,8 @@ export class SizesController {
     @ApiOperation({ summary: 'Obtener un talle por ID' })
     @ApiResponse({ status: 200, description: 'Talle encontrado', type: Sizes })
     @ApiResponse({ status: 404, description: 'Talle no encontrado' })
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     async findOne(@Param('id') id: string): Promise<Sizes> {
         return this.sizesService.getSize(id);
@@ -81,8 +85,8 @@ export class SizesController {
     @ApiOperation({ summary: 'Modificar un talle' })
     @ApiResponse({ status: 200, description: 'Talle modificado', type: UpdateSizeDto })
     @ApiResponse({ status: 404, description: 'Talle no encontrado' })
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     @ApiBody({
         description: 'Datos para actualizar el talle',
@@ -100,8 +104,8 @@ export class SizesController {
     @Patch(':id/state')
     @ApiOperation({ summary: 'Cambiar estado del talle (activar/desactivar) - Solo Admin' })
     @ApiResponse({ status: 200, description: 'Estado actualizado correctamente' })
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     async updateState(
         @Param('id') id: string,

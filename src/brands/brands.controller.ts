@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
 import {  ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { BrandsService } from "./brands.service";
 import { ResponseBrandDto } from "./dto/response-brand.dto";
@@ -6,6 +6,10 @@ import { CreateBrandDto } from "./dto/create-brand.dto";
 import { Brands } from "./brands.entity";
 import { UpdateBrandDto } from "./dto/update-brand.dto";
 import { UpdateBrandStateDto } from "./dto/update-brandState.dto";
+import { Roles } from "src/auth/decorators/roles.decorator";
+import { rolEnum } from "src/users/users.entity";
+import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
+import { RolesGuard } from "src/auth/guards/roles.guard";
 
 
 @ApiTags('Brands')
@@ -44,8 +48,8 @@ export class BrandsController {
     @Get('all')
     @ApiOperation({ summary: 'Listar todas las marcas (activas e inactivas)' })
     @ApiResponse({ status: 200, description: 'Lista de marcas', type: [Brands] })
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     async findAllForAdmin(): Promise<Brands[]> {
         return this.brandsService.getAllBrands();
@@ -63,8 +67,8 @@ export class BrandsController {
     @ApiOperation({ summary: 'Obtener una marca por ID' })
     @ApiResponse({ status: 200, description: 'Marca encontrada', type: Brands })
     @ApiResponse({ status: 404, description: 'Marca no encontrada' })
-     // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     async findOne(@Param('id') id: string): Promise<Brands> {
             return this.brandsService.getBrand(id);
@@ -82,8 +86,8 @@ export class BrandsController {
     @ApiOperation({ summary: 'Modificar una marca' })
     @ApiResponse({ status: 200, description: 'Marca modificada', type: UpdateBrandDto })
     @ApiResponse({ status: 404, description: 'Marca no encontrada' })
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     @ApiBody({
         description: 'Datos para actualizar la marca',
@@ -101,8 +105,8 @@ export class BrandsController {
     @Patch(':id/state')
     @ApiOperation({ summary: 'Cambiar estado de marca (activar/desactivar) - Solo Admin' })
     @ApiResponse({ status: 200, description: 'Estado actualizado correctamente' })
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
     async updateState(
         @Param('id') id: string,
