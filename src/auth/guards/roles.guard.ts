@@ -4,7 +4,7 @@ import { Observable } from "rxjs";
 import { rolEnum } from "src/users/users.entity";
 
 // Interfaz para tipar el request
-interface RequestWithUser {
+export interface RequestWithUser {
     user: {
         id: string;
         email: string;

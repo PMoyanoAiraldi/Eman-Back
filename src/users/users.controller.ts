@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { UsersService } from "./users.service";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
@@ -6,6 +6,8 @@ import { RolesGuard } from "src/auth/guards/roles.guard";
 import { Roles } from "src/auth/decorators/roles.decorator";
 import { rolEnum, Users } from "./users.entity";
 import { UserResponseDto } from "./dto/response-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { RequestWithUser } from '../auth/guards/roles.guard'
 
 @ApiTags('Users')
 @Controller("users")
@@ -75,7 +77,31 @@ export class UsersController {
         return this.usersService.updateUserState(id, state);
     }
 
-    
+    @Patch('profile')
+    @ApiOperation({ summary: 'Actualizar datos del usuario logueado' })
+    @ApiResponse({ status: 200, description: 'Usuario actualizado exitosamente' })
+    @ApiBody({
+        description: 'Datos a actualizar',
+        schema: {
+            type: 'object',
+            properties: {
+                name: { type: 'string' },
+                address: { type: 'string' },
+                city: { type: 'string' },
+                phone: { type: 'string' },
+            }
+        }
+    })
+    @UseGuards(JwtAuthGuard)
+    @ApiSecurity('bearer')
+    async updateProfile(
+        @Req() req: any,
+        @Body() updateUserDto: UpdateUserDto,
+    ) {
+        const userId = (req as RequestWithUser).user.id; // ← ID viene del token, no del parámetro. Usamos la interface creada en roles.guard
+        return this.usersService.updateUser(userId, updateUserDto);
+    }
+        
 
 
     
