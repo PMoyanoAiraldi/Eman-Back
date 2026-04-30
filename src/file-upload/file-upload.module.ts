@@ -2,19 +2,20 @@ import { Module } from '@nestjs/common';
 import { FileUploadService } from './file-upload.service';
 import { CloudinaryService } from './cloudinary.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from 'src/user/users.entity';
-import { UserService } from 'src/user/users.service';
-import { LineaService } from 'src/linea/linea.service';
-import { Products } from 'src/product/product.entity';
+import { Products } from 'src/products/products.entity';
+import { FileUploadController } from './file-upload.controller';
+import { Images } from 'src/images/images.entity';
+import { MediaContent } from 'src/mediaContent/mediaContent.entity';
+
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Products]),
+    TypeOrmModule.forFeature([Products, Images, MediaContent]),
   
   ],
-  providers: [FileUploadService,UserService, CloudinaryService,  LineaService],
-  controllers: [],
+  providers: [FileUploadService, CloudinaryService],
+  controllers: [FileUploadController],
   exports: [FileUploadService,  CloudinaryService]
 })
 
