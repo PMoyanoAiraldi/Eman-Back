@@ -18,6 +18,8 @@ import { ProductSizesModule } from './productSizes/productSizes.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SeedModule } from './seeds/seeds.module';
+import { FileUploadModule } from './file-upload/file-upload.module';
+import { MediaContentModule } from './mediaContent/mediaContent.module';
 
 @Module({
   imports: [
@@ -46,7 +48,9 @@ import { SeedModule } from './seeds/seeds.module';
     SizesModule,
     UsersModule,
     AuthModule,
-    SeedModule
+    SeedModule,
+    FileUploadModule,
+    MediaContentModule
 
   ],
   controllers: [AppController],

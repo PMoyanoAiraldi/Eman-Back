@@ -2,10 +2,11 @@ import { Controller, Post, Patch, Delete, Param, Query, UploadedFile, UseInterce
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadService } from './file-upload.service';
 import { Roles } from 'src/auth/decorators/roles.decorator';
-import { ApiSecurity } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiQuery, ApiSecurity } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { rolEnum } from 'src/users/users.entity';
+import { MediaType } from 'src/mediaContent/mediaContent.entity';
 
 type EntityType = 'product' | 'media';
 
@@ -16,17 +17,35 @@ type EntityType = 'product' | 'media';
 export class FileUploadController {
     constructor(private readonly fileUploadService: FileUploadService) {}
 
+
+    @ApiQuery({ name: 'entityType', required: true, enum: ['product', 'media'] })
+    @ApiQuery({ name: 'entityId', required: false, description: 'Requerido solo para actualizar' })
+    @ApiQuery({ name: 'mediaType', required: false, enum: MediaType })
     @Post()
-    @UseInterceptors(FileInterceptor('file'))
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+    schema: {
+        type: 'object',
+        properties: {
+            file: {
+                type: 'string',
+                format: 'binary',
+                description: 'Imagen a subir'
+            }
+        }
+        }
+    })
+    @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
     async uploadFile(
         @UploadedFile() file: Express.Multer.File,
         @Query('entityType') entityType: EntityType,
         @Query('entityId') entityId?: string,
+        @Query('mediaType') mediaType?: MediaType,
     ) {
         if (!file) throw new BadRequestException('No se proporcionó ningún archivo');
         if (!entityType) throw new BadRequestException('No se proporcionó el tipo de entidad');
 
-        return this.fileUploadService.uploadFile(file, entityType, entityId);
+        return this.fileUploadService.uploadFile(file, entityType, entityId, mediaType);
     }
 
     @Patch('images/:imageId')

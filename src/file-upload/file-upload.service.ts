@@ -3,7 +3,7 @@ import { CloudinaryService } from './cloudinary.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Products } from 'src/products/products.entity';
-import { MediaContent } from 'src/mediaContent/mediaContent.entity';
+import { MediaContent, MediaType } from 'src/mediaContent/mediaContent.entity';
 import { Images } from 'src/images/images.entity';
 
 type EntityType = 'product'  | 'media';
@@ -23,7 +23,8 @@ export class FileUploadService {
     async uploadFile(
         file: Express.Multer.File, 
         entityType: EntityType,
-        entityId?: string
+        entityId?: string,
+        mediaType?: MediaType
     ): Promise<{ imgUrl: string }>{
     
         if (!file || !file.buffer || !file.originalname) {
@@ -93,7 +94,10 @@ export class FileUploadService {
                     await this.mediaContentRepository.save(media);
                 } else {
                     // Crea nuevo registro — los demás campos los setea quien llame al endpoint
-                    const newMedia = this.mediaContentRepository.create({ url });
+                    const newMedia = this.mediaContentRepository.create({ 
+                        url,
+                        type: mediaType 
+                    });
                     await this.mediaContentRepository.save(newMedia);
                 }
                 break;
