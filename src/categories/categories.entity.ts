@@ -1,3 +1,4 @@
+import { SubCategories } from '../subCategories/subCategories.entity';
 import { Products } from '../products/products.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -11,6 +12,12 @@ export class Categories {
 
   @Column({ default: true })
   state: boolean;
+
+  @Column({ length: 500, nullable: true })
+  imageUrl: string;
+
+  @OneToMany(() => SubCategories, (subcategory) => subcategory.category)
+  subcategories: SubCategories[];
 
   @OneToMany(() => Products, (product) => product.category)
   products: Products[];

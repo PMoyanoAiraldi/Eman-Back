@@ -20,6 +20,8 @@ import { AuthModule } from './auth/auth.module';
 import { SeedModule } from './seeds/seeds.module';
 import { FileUploadModule } from './file-upload/file-upload.module';
 import { MediaContentModule } from './mediaContent/mediaContent.module';
+import { SubCategoriesModule } from './subCategories/subCategories.module';
+import { ProductTypesModule } from './productTypes/productTypes.module';
 
 @Module({
   imports: [
@@ -50,7 +52,9 @@ import { MediaContentModule } from './mediaContent/mediaContent.module';
     AuthModule,
     SeedModule,
     FileUploadModule,
-    MediaContentModule
+    MediaContentModule,
+    SubCategoriesModule,
+    ProductTypesModule
 
   ],
   controllers: [AppController],
