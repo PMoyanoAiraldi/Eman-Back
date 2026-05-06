@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UseGuards } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { CategoriesService } from "./categories.service";
 import { ResponseCategoryDto } from "./dto/response-category.dto";
@@ -10,12 +10,17 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guards/roles.guard";
 import { Roles } from "src/auth/decorators/roles.decorator";
 import { rolEnum } from "src/users/users.entity";
+import { FileUploadService } from "src/file-upload/file-upload.service";
+import { CloudinaryService } from "src/file-upload/cloudinary.service";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 @ApiTags('Categories')
 @Controller("categories")
 export class CategoriesController {
     constructor(
         private readonly categoriesService: CategoriesService,
+        private readonly fileUploadService: FileUploadService,
+        private readonly cloudinaryService: CloudinaryService,
     ) { }
 
 
@@ -114,4 +119,52 @@ export class CategoriesController {
     ) {
         return this.categoriesService.updateState(id, updateStateCategoryDto.state);
     }
+
+    @Patch(':id/image')
+    @ApiOperation({ summary: 'Subir o reemplazar imagen de categoría - Solo Admin' })
+    @ApiResponse({ status: 200, description: 'Imagen actualizada correctamente' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary'
+                }
+            }
+        }
+    })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
+    @ApiSecurity('bearer')
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadImage(
+        @Param('id') id: string,
+        @UploadedFile() file: Express.Multer.File
+    ) {
+        return this.fileUploadService.uploadFile(file, 'category', id);
+    }
+
+    @Delete(':id/image')
+    @ApiOperation({ summary: 'Eliminar imagen de categoría - Solo Admin' })
+    @ApiResponse({ status: 200, description: 'Imagen eliminada correctamente' })
+    @ApiResponse({ status: 404, description: 'Categoría no encontrada' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
+    @ApiSecurity('bearer')
+    async deleteImage(@Param('id') id: string) {
+        const category = await this.categoriesService.getCategory(id);
+        
+        if (!category.imageUrl) {
+            throw new BadRequestException('La categoría no tiene imagen');
+        }
+        
+        await this.cloudinaryService.deleteFile(category.imageUrl);
+        return this.categoriesService.removeImage(id);
+    }
+
+
+
+
+
 }

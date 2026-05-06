@@ -18,7 +18,7 @@ export class FileUploadController {
     constructor(private readonly fileUploadService: FileUploadService) {}
 
 
-    @ApiQuery({ name: 'entityType', required: true, enum: ['product', 'media'] })
+    @ApiQuery({ name: 'entityType', required: true, enum: ['product', 'media', 'category', 'subcategory'] })
     @ApiQuery({ name: 'entityId', required: false, description: 'Requerido solo para actualizar' })
     @ApiQuery({ name: 'mediaType', required: false, enum: MediaType })
     @Post()

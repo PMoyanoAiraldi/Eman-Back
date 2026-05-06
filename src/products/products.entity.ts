@@ -27,6 +27,9 @@ export class Products {
     @CreateDateColumn()
     createdAt: Date;
 
+    @Column({ length: 10, nullable: true })
+    gender: string; 
+
     @ManyToOne(() => Brands, (brand) => brand.products)
     @JoinColumn({ name: 'brandId' })
     brand: Brands;

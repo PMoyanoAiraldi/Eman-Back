@@ -6,12 +6,14 @@ import { Products } from 'src/products/products.entity';
 import { FileUploadController } from './file-upload.controller';
 import { Images } from 'src/images/images.entity';
 import { MediaContent } from 'src/mediaContent/mediaContent.entity';
+import { SubCategories } from 'src/subCategories/subCategories.entity';
+import { Categories } from 'src/categories/categories.entity';
 
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Products, Images, MediaContent]),
+    TypeOrmModule.forFeature([Products, Images, MediaContent, SubCategories, Categories]),
   
   ],
   providers: [FileUploadService, CloudinaryService],

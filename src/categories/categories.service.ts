@@ -92,6 +92,17 @@ export class CategoriesService {
     
                 return this.categoriesRepository.save(category);
             }
+
+            async removeImage(id: string): Promise<Categories> {
+                const category = await this.getCategory(id);
+                
+                if (!category.imageUrl) {
+                    throw new BadRequestException('La categoría no tiene imagen');
+                }
+                
+                category.imageUrl = 'default-image-url.jpg';
+                return this.categoriesRepository.save(category);
+            }
     
         // async findProductByCategory(categoryId: string): Promise <ResponseCategoryDto> {
         //     const category = await this.categoriesRepository.findOne({
