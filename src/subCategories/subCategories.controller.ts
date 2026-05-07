@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
-import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
+import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { SubCategoriesService } from "./subCategories.service";
 import { FileUploadService } from "src/file-upload/file-upload.service";
 import { CloudinaryService } from "src/file-upload/cloudinary.service";
@@ -35,6 +35,7 @@ export class SubCategoriesController {
                 type: 'object',
                 properties: {
                     name: { type: 'string' },
+                    categoryId: { type: 'string', description: 'UUID de la categoría padre' }
                 }
             }
         })
@@ -122,6 +123,7 @@ export class SubCategoriesController {
         @Patch(':id/image')
         @ApiOperation({ summary: 'Subir o reemplazar imagen de subcategoría - Solo Admin' })
         @ApiResponse({ status: 200, description: 'Imagen actualizada correctamente' })
+        @ApiConsumes('multipart/form-data')
         @ApiBody({
             schema: {
                 type: 'object',

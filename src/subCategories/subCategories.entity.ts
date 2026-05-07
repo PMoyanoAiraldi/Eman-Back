@@ -13,8 +13,8 @@ export class SubCategories {
     @Column({ default: true })
     state: boolean;
 
-    @Column({ length: 500, nullable: true })
-    imageUrl: string;
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    imageUrl: string | null;
 
     @ManyToOne(() => Categories, (category) => category.subcategories)
     @JoinColumn({ name: 'categoryId' })

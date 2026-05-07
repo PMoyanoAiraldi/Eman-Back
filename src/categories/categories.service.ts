@@ -100,7 +100,7 @@ export class CategoriesService {
                     throw new BadRequestException('La categoría no tiene imagen');
                 }
                 
-                category.imageUrl = 'default-image-url.jpg';
+                category.imageUrl = null;
                 return this.categoriesRepository.save(category);
             }
     

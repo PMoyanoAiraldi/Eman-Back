@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsString, MaxLength } from "class-validator";
+import { IsNotEmpty, IsString, IsUUID, MaxLength } from "class-validator";
 
 export class CreateSubCategoryDto {
     
@@ -8,5 +8,9 @@ export class CreateSubCategoryDto {
     @IsNotEmpty()
     @MaxLength(255)
     name: string;
+
+    @IsUUID()
+    @IsNotEmpty()
+    categoryId: string;
 
 }

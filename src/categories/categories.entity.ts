@@ -13,8 +13,8 @@ export class Categories {
   @Column({ default: true })
   state: boolean;
 
-  @Column({ length: 500, nullable: true })
-  imageUrl: string;
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  imageUrl: string | null;
 
   @OneToMany(() => SubCategories, (subcategory) => subcategory.category)
   subcategories: SubCategories[];
