@@ -54,7 +54,8 @@ import { ProductTypesModule } from './productTypes/productTypes.module';
     FileUploadModule,
     MediaContentModule,
     SubCategoriesModule,
-    ProductTypesModule
+    ProductTypesModule,
+    ImagesModule
 
   ],
   controllers: [AppController],

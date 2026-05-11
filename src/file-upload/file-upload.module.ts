@@ -8,6 +8,7 @@ import { Images } from 'src/images/images.entity';
 import { MediaContent } from 'src/mediaContent/mediaContent.entity';
 import { SubCategories } from 'src/subCategories/subCategories.entity';
 import { Categories } from 'src/categories/categories.entity';
+import { ImagesService } from 'src/images/images.service';
 
 
 
@@ -16,7 +17,7 @@ import { Categories } from 'src/categories/categories.entity';
     TypeOrmModule.forFeature([Products, Images, MediaContent, SubCategories, Categories]),
   
   ],
-  providers: [FileUploadService, CloudinaryService],
+  providers: [FileUploadService, CloudinaryService, ImagesService],
   controllers: [FileUploadController],
   exports: [FileUploadService,  CloudinaryService]
 })

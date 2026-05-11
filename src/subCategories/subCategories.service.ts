@@ -57,6 +57,17 @@ export class SubCategoriesService {
                     order: { name: 'ASC' }
                 });
             }
+
+        async getSubCategoriesByCategory(categoryId: string): Promise<SubCategories[]> {
+            return this.subCategoriesRepository.find({
+                where: { 
+                    category: { id: categoryId },
+                    state: true 
+                },
+                relations: ['category'],
+                order: { name: 'ASC' }
+            });
+        }
     
         async getSubCategory(id: string): Promise<SubCategories>{
                 const subcategory = await this.subCategoriesRepository.findOne({ 

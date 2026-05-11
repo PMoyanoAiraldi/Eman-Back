@@ -59,6 +59,13 @@ export class SubCategoriesController {
             async findAllForAdmin(): Promise<SubCategories[]> {
                 return this.subCategoriesService.getAllSubCategories();
         }
+
+        @Get('by-category/:categoryId')
+        @ApiOperation({ summary: 'Obtener subcategorías activas por categoría' })
+        @ApiResponse({ status: 200, description: 'Subcategorías encontradas', type: [SubCategories] })
+        async findByCategory(@Param('categoryId') categoryId: string): Promise<SubCategories[]> {
+            return this.subCategoriesService.getSubCategoriesByCategory(categoryId);
+        }
         
         @Get(':id/actives')
         @ApiOperation({ summary: 'Obtener una subcategoría activa por ID' })

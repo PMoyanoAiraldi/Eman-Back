@@ -9,10 +9,11 @@ import { Products } from 'src/products/products.entity';
 import { MediaContent } from 'src/mediaContent/mediaContent.entity';
 import { Images } from 'src/images/images.entity';
 import { SubCategories } from 'src/subCategories/subCategories.entity';
+import { ImagesService } from 'src/images/images.service';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Categories, Products, MediaContent, Images, SubCategories])],
-    providers: [ CategoriesService, FileUploadService, CloudinaryService],
+    providers: [ CategoriesService, FileUploadService, CloudinaryService, ImagesService],
     controllers: [CategoriesController],
     exports: [CategoriesService]
 })
