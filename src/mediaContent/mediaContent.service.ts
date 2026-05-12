@@ -4,12 +4,14 @@ import { MediaContent, MediaType } from "./mediaContent.entity";
 import { Repository } from "typeorm";
 import { CreateMediaContentDto } from "./dto/create-mediaContent.dto";
 import { UpdateMediaContentDto } from "./dto/update-mediaContent.dto";
+import { CloudinaryService } from "src/file-upload/cloudinary.service";
 
 @Injectable()
 export class MediaContentService {
     constructor(
     @InjectRepository(MediaContent)
         private readonly mediaContentRepository: Repository<MediaContent>,
+        private readonly cloudinaryService: CloudinaryService,
     ) { }
 
     async findAll(): Promise<MediaContent[]> {
@@ -54,6 +56,11 @@ export class MediaContentService {
 
     async remove(id: string): Promise<{ message: string }> {
         const media = await this.findOne(id);
+
+        await this.cloudinaryService.deleteFile(media.url).catch(
+                err => console.error('Error al eliminar imagen de Cloudinary:', err)
+            );
+
         await this.mediaContentRepository.remove(media);
         return { message: 'MediaContent eliminado correctamente' };
     }

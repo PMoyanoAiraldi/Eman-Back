@@ -43,10 +43,11 @@ export class MediaContentController {
         return await this.mediaContentService.create(createMediaContentdto);
     }
 
+    
+    @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
-    @Patch(':id')
     update(@Param('id') id: string, @Body() updateMediaContentDto: UpdateMediaContentDto) {
         return this.mediaContentService.update(id, updateMediaContentDto);
     }
