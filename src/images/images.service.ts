@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Images } from "./images.entity";
 import { Repository } from "typeorm";
@@ -31,6 +31,12 @@ export class ImagesService {
             'products',
             file.originalname
         )
+
+        // Verificar que no exista ya esa URL para ese producto
+        const existingImage = product.images.find(img => img.url === url);
+        if (existingImage) {
+            throw new BadRequestException('Esa imagen ya existe para este producto');
+        }
 
         const isPrimary = product.images.length === 0;
 

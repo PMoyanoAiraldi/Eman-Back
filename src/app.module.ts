@@ -55,7 +55,8 @@ import { ProductTypesModule } from './productTypes/productTypes.module';
     MediaContentModule,
     SubCategoriesModule,
     ProductTypesModule,
-    ImagesModule
+    ImagesModule,
+    ProductSizesModule
 
   ],
   controllers: [AppController],

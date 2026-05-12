@@ -3,15 +3,6 @@ import * as dotenv from 'dotenv';
 import { v2 as cloudinary, UploadApiOptions} from 'cloudinary';
 import * as crypto from 'crypto';
 
-interface CloudinaryResource {
-    etag: string;
-    secure_url: string;
-    public_id: string;
-}
-
-interface CloudinaryResourcesResponse {
-    resources: CloudinaryResource[];
-}
 
 interface CloudinaryDestroyResult {
     result: 'ok' | 'not found';
@@ -35,27 +26,22 @@ export class CloudinaryService {
         ? originalName.replace(/[^a-zA-Z0-9_-]/g, '').split('.')[0] // Limpia el nombre
         : `file_${Date.now()}`; // Genera un nombre predeterminado si no se proporciona uno
 
-        const uniqueId = crypto.randomBytes(4).toString('hex'); // ID único para evitar conflictos
-
-        // Intentar buscar archivos duplicados por hash
+        // Usamos el hash como public_id para detectar duplicados
         const hash = crypto.createHash('sha1').update(buffer).digest('hex');
+        const publicId = `${folder}/${cleanFileName}_${hash}`;
         
-        // Busca en Cloudinary si ya existe un archivo con el mismo hash
-        const existingFiles = (await cloudinary.api.resources({
-        type: 'upload',
-        prefix: folder /// Filtrar por la carpeta específica
-    })) as CloudinaryResourcesResponse;
-
-    const existingFile = existingFiles.resources.find((file: CloudinaryResource) => file.etag === hash);
-
-    if (existingFile) {
-        console.log('Archivo duplicado detectado, no se subirá nuevamente.');
-        return existingFile.secure_url; // Retorna la URL existente
-    }
+        // Intentar buscar si ya existe en Cloudinary
+        try {
+            const existing = await cloudinary.api.resource(publicId) as { secure_url: string };
+            console.log('Archivo duplicado detectado, retornando URL existente');
+            return existing.secure_url;
+        } catch {
+            // No existe, continuamos con la subida
+        }
 
         const options: UploadApiOptions = {
             folder, // Usamos la carpeta específica pasada como argumento
-            public_id: `${cleanFileName}_${uniqueId}`,//  ID único del archivo
+            public_id: `${cleanFileName}_${hash}`,//  ID único del archivo
             resource_type: 'auto' // Automáticamente detecta el tipo
         }
 
