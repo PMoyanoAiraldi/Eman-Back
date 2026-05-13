@@ -22,6 +22,21 @@ export class MediaContent {
     @Column({ length: 255 })
     url: string;
 
+    @Column({ nullable: true, length: 100 })
+    tag: string;              // "NUEVA COLECCIÓN", "SALE", "TEMPORADA 2025"
+
+    @Column({ nullable: true, length: 150 })
+    title: string;            // "Tu mejor versión"
+
+    @Column({ nullable: true, length: 255 })
+    subtitle: string;         // "Moda que te define"
+
+    @Column({ nullable: true, length: 100 })
+    ctaText: string;          // "Explorar"
+
+    @Column({ nullable: true, length: 255 })
+    ctaUrl: string;           // "/mujer"
+
     @Column({ type: 'enum', enum: MediaType })
     type: MediaType;
 

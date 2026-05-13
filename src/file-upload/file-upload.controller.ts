@@ -9,7 +9,7 @@ import { rolEnum } from 'src/users/users.entity';
 import { MediaType } from 'src/mediaContent/mediaContent.entity';
 
 
-type EntityType = 'media'| 'category' | 'subcategory';
+type EntityType =  'category' | 'subcategory';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(rolEnum.ADMIN)
@@ -43,12 +43,11 @@ export class FileUploadController {
         @UploadedFile() file: Express.Multer.File,
         @Query('entityType') entityType: EntityType,
         @Query('entityId') entityId?: string,
-        @Query('mediaType') mediaType?: MediaType,
     ) {
         if (!file) throw new BadRequestException('No se proporcionó ningún archivo');
         if (!entityType) throw new BadRequestException('No se proporcionó el tipo de entidad');
 
-        return this.fileUploadService.uploadFile(file, entityType, entityId, mediaType);
+        return this.fileUploadService.uploadFile(file, entityType, entityId, );
     }
 
     @Delete(':publicId')

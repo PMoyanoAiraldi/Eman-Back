@@ -2,20 +2,16 @@ import { Injectable, InternalServerErrorException, NotFoundException } from '@ne
 import { CloudinaryService } from './cloudinary.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MediaContent, MediaType } from 'src/mediaContent/mediaContent.entity';
 import { Categories } from 'src/categories/categories.entity';
 import { SubCategories } from 'src/subCategories/subCategories.entity';
-import { ImagesService } from 'src/images/images.service';
 
-type EntityType = 'media' | 'category' | 'subcategory';
+
+type EntityType = 'category' | 'subcategory';
 
 @Injectable()
 export class FileUploadService {
     constructor(
         private readonly cloudinaryService: CloudinaryService, 
-        private readonly imagesService: ImagesService,
-        @InjectRepository(MediaContent)
-        private readonly mediaContentRepository: Repository<MediaContent>,
         @InjectRepository(Categories)
         private readonly categoriesRepository: Repository<Categories>,
         @InjectRepository(SubCategories)
@@ -26,14 +22,13 @@ export class FileUploadService {
         file: Express.Multer.File, 
         entityType: EntityType,
         entityId?: string,
-        mediaType?: MediaType
     ): Promise<{ imgUrl: string }>{
     
         if (!file || !file.buffer || !file.originalname) {
             throw new Error('El archivo proporcionado no es válido');
         }
 
-        if (![ 'media', 'category', 'subcategory'].includes(entityType)) {
+        if (![ 'category', 'subcategory'].includes(entityType)) {
             throw new Error('El tipo de entidad proporcionado no es válido');
         }
 
@@ -51,32 +46,6 @@ export class FileUploadService {
 
         // Actualizar la URL de la imagen en la entidad correspondiente usando los servicios
         switch (entityType) {
-            case 'media': {
-                // Si viene entityId, actualiza una existente
-                // Si no, crea una nueva
-                if (entityId) {
-                    const media = await this.mediaContentRepository.findOne({
-                        where: { id: entityId }
-                    });
-                    if (!media) throw new NotFoundException('MediaContent no encontrado');
-                    
-                    await this.cloudinaryService.deleteFile(media.url).catch(
-                        err => console.error('Error al eliminar imagen anterior:', err)
-                    );
-                    
-                    media.url = url;
-                    await this.mediaContentRepository.save(media);
-                } else {
-                    // Crea nuevo registro — los demás campos los setea quien llame al endpoint
-                    const newMedia = this.mediaContentRepository.create({ 
-                        url,
-                        type: mediaType 
-                    });
-                    await this.mediaContentRepository.save(newMedia);
-                }
-                break;
-            }
-
             case 'category': {
                 if (!entityId) throw new Error('No se proporcionó un ID de categoría.');
                 
@@ -132,8 +101,6 @@ export class FileUploadService {
 
     private getFolderForEntityType(entityType: EntityType): string {
         switch (entityType) {
-            case 'media':
-                return 'media';
             case 'category':
                 return 'category';
             case 'subcategory':

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { MediaContent, MediaType } from "./mediaContent.entity";
 import { Repository } from "typeorm";
@@ -35,14 +35,40 @@ export class MediaContentService {
         return media;
     }
 
-    async create(createMediaContentDto: CreateMediaContentDto): Promise<MediaContent> {
-        const media = this.mediaContentRepository.create(createMediaContentDto);
+    async create(createMediaContentDto: CreateMediaContentDto, file: Express.Multer.File): Promise<MediaContent> {
+        if (!file) throw new BadRequestException('No se proporcionó imagen');
+    
+        const url = await this.cloudinaryService.uploadFile(
+            file.buffer,
+            'media',
+            file.originalname
+        );
+
+        const media = this.mediaContentRepository.create({
+            ...createMediaContentDto,
+            url,
+            order: createMediaContentDto.order ?? 0
+        });
 
         return this.mediaContentRepository.save(media);
     }
 
-    async update(id: string, updateMediaContentDto: UpdateMediaContentDto): Promise<MediaContent> {
+    async update(id: string, updateMediaContentDto: UpdateMediaContentDto, file: Express.Multer.File): Promise<MediaContent> {
         const media = await this.findOne(id);
+
+         // Si viene archivo nuevo, subimos y borramos el anterior
+        if (file) {
+            await this.cloudinaryService.deleteFile(media.url).catch(
+                err => console.error('Error al eliminar imagen anterior:', err)
+            );
+            const url = await this.cloudinaryService.uploadFile(
+                file.buffer,
+                'media',
+                file.originalname
+            );
+            media.url = url;
+        }
+        
         Object.assign(media, updateMediaContentDto);
         return this.mediaContentRepository.save(media);
     }
