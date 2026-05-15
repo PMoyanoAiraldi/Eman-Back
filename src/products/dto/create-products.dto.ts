@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class CreateProductDto {
     @IsString()
@@ -16,6 +16,10 @@ export class CreateProductDto {
     @IsOptional()
     @IsEnum(['hombre', 'mujer', 'unisex'])
     gender?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    isFeatured?: boolean;
 
     @IsUUID()
     brandId: string;

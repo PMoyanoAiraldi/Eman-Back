@@ -54,6 +54,7 @@ export class ProductsService {
             description: createProductDto.description.trim(),
             price: createProductDto.price,
             gender: createProductDto.gender,
+            isFeatured: createProductDto.isFeatured,
             brand,
             category,
             subcategory,
@@ -152,6 +153,9 @@ export class ProductsService {
         if (updateProductDto.description) product.description = updateProductDto.description.trim();
         if (updateProductDto.price) product.price = updateProductDto.price;
         if (updateProductDto.gender) product.gender = updateProductDto.gender;
+        if (updateProductDto.isFeatured !== undefined) {
+            product.isFeatured = updateProductDto.isFeatured;
+        }
 
         if (updateProductDto.brandId) {
             const brand = await this.brandsRepository.findOne({ where: { id: updateProductDto.brandId } });
@@ -184,6 +188,15 @@ export class ProductsService {
         const product = await this.getProduct(id);
         product.state = state;
         return this.productRepository.save(product);
+    }
+
+    async getFeaturedProducts(): Promise<Products[]> {
+        return this.productRepository.find({
+            where: { isFeatured: true, state: true },
+            relations: ['images'],
+            order: { createdAt: 'DESC' },
+            take: 4
+            });
     }
 
 

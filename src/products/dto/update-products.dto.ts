@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class UpdateProductDto {
     @IsOptional()
@@ -17,6 +17,10 @@ export class UpdateProductDto {
     @IsOptional()
     @IsEnum(['hombre', 'mujer', 'unisex'])
     gender?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    isFeatured?: boolean;
 
     @IsOptional()
     @IsUUID()

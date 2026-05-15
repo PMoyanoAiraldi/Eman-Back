@@ -34,6 +34,7 @@ export class ProductsController {
                 description: { type: 'string' },
                 price: { type: 'number' },
                 gender: { type: 'string', enum: ['hombre', 'mujer', 'unisex'] },
+                isFeatured:{ type: 'boolean'},
                 brandId: { type: 'string' },
                 categoryId: { type: 'string' },
                 subcategoryId: { type: 'string' },
@@ -72,6 +73,11 @@ export class ProductsController {
         return this.productsService.getAllProducts();
     }
 
+    @Get('featured')
+    getFeatured() {
+        return this.productsService.getFeaturedProducts();
+    }
+
     @Get(':id')
     @ApiOperation({ summary: 'Obtener un producto por ID' })
     @ApiResponse({ status: 200, description: 'Producto encontrado', type: ResponseProductDto })
@@ -91,6 +97,7 @@ export class ProductsController {
         return this.productsService.getProduct(id);
     }
 
+
     @Put(':id')
     @ApiOperation({ summary: 'Modificar un producto - Solo Admin' })
     @ApiResponse({ status: 200, description: 'Producto modificado', type: ResponseProductDto })
@@ -107,6 +114,7 @@ export class ProductsController {
                 description: { type: 'string' },
                 price: { type: 'number' },
                 gender: { type: 'string', enum: ['hombre', 'mujer', 'unisex'] },
+                isFeatured: { type: 'boolean'},
                 brandId: { type: 'string' },
                 categoryId: { type: 'string' },
                 subcategoryId: { type: 'string' },
