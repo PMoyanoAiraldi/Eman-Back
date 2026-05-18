@@ -17,7 +17,7 @@ import { UsersService } from "src/users/users.service";
         PassportModule,
         JwtModule.register({
             secret: process.env.JWT_SECRET, // o process.env.JWT_SECRET
-            signOptions: { expiresIn: "1h" },
+            signOptions: { expiresIn: "2h" },
         }),
         ConfigModule,
         ],

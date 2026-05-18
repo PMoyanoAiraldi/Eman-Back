@@ -23,10 +23,10 @@ export class ResponseProductDto {
     @IsEnum(['hombre', 'mujer', 'unisex'])
     gender: string;
 
-    brand: {
+    brand?: {
         id: string;
         name: string;
-    };
+    } | null;
 
     category: {
         id: string;

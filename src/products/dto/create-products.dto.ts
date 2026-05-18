@@ -21,8 +21,9 @@ export class CreateProductDto {
     @IsBoolean()
     isFeatured?: boolean;
 
+    @IsOptional()
     @IsUUID()
-    brandId: string;
+    brandId?: string;
 
     @IsUUID()
     categoryId: string;

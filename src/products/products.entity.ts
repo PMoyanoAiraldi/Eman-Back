@@ -35,7 +35,7 @@ export class Products {
 
     @ManyToOne(() => Brands, (brand) => brand.products)
     @JoinColumn({ name: 'brandId' })
-    brand: Brands;
+    brand?: Brands | null;
 
     @ManyToOne(() => Categories, (category) => category.products)
     @JoinColumn({ name: 'categoryId' })

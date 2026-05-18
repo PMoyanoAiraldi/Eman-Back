@@ -34,7 +34,12 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {
+        persistAuthorization: true, // Para que en produccion no caduque el token en 15m
+    },
+
+});
 
   await app.listen(process.env.PORT ?? 3010);
 }

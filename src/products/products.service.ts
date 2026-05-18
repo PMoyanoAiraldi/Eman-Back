@@ -37,8 +37,12 @@ export class ProductsService {
         }
 
         // Verificar que existan las relaciones
-        const brand = await this.brandsRepository.findOne({ where: { id: createProductDto.brandId } });
+
+        let brand: Brands | null = null;
+        if(createProductDto.brandId){
+            brand = await this.brandsRepository.findOne({ where: { id: createProductDto.brandId } });
         if (!brand) throw new NotFoundException('Marca no encontrada');
+        }
 
         const category = await this.categoriesRepository.findOne({ where: { id: createProductDto.categoryId } });
         if (!category) throw new NotFoundException('Categoría no encontrada');
@@ -193,7 +197,7 @@ export class ProductsService {
     async getFeaturedProducts(): Promise<Products[]> {
         return this.productRepository.find({
             where: { isFeatured: true, state: true },
-            relations: ['images'],
+            relations: ['images', 'category', 'brand', 'productSizes'],
             order: { createdAt: 'DESC' },
             take: 4
             });
