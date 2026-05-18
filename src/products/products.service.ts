@@ -197,7 +197,7 @@ export class ProductsService {
     async getFeaturedProducts(): Promise<Products[]> {
         return this.productRepository.find({
             where: { isFeatured: true, state: true },
-            relations: ['images', 'category', 'brand', 'productSizes'],
+            relations: ['images', 'category', 'brand', 'productSizes', 'productSizes.size'],
             order: { createdAt: 'DESC' },
             take: 4
             });
