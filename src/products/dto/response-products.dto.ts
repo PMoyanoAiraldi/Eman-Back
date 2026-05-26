@@ -38,10 +38,10 @@ export class ResponseProductDto {
         name: string;
     };
 
-    productType: {
+    productType?: {
         id: string;
         name: string;
-    };
+    } | null;
 
     images: {
         id: string;

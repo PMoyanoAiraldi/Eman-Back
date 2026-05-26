@@ -39,7 +39,7 @@ export class ProductsController {
                 brandId: { type: 'string', nullable: true },
                 categoryId: { type: 'string' },
                 subcategoryId: { type: 'string' },
-                productTypeId: { type: 'string' },
+                productTypeId: { type: 'string', nullable: true },
             }
         }
     })

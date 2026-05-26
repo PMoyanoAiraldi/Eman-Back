@@ -47,7 +47,7 @@ export class Products {
 
     @ManyToOne(() => ProductTypes, (productType) => productType.products)
     @JoinColumn({ name: 'typeId' })
-    productType: ProductTypes;
+    productType?: ProductTypes | null;
 
     @OneToMany(() => Images, (image) => image.product)
     images: Images[];
