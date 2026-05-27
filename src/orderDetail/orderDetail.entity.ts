@@ -1,4 +1,4 @@
-import { ProductVariants } from "src/productVariants/productVariants.entity";
+import { ProductVariants } from "../productVariants/productVariants.entity";
 import { Order } from "../order/order.entity";
 import { Products } from "../products/products.entity";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";

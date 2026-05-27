@@ -5,7 +5,7 @@ import { Images } from "../images/images.entity";
 import { OrderDetail } from "../orderDetail/orderDetail.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { ProductTypes } from "../productTypes/productTypes.entity";
-import { ProductVariants } from "src/productVariants/productVariants.entity";
+import { ProductVariants } from "../productVariants/productVariants.entity";
 
 @Entity({ name: 'products' })
 export class Products {

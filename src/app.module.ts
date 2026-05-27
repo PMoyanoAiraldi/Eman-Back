@@ -22,6 +22,7 @@ import { FileUploadModule } from './file-upload/file-upload.module';
 import { MediaContentModule } from './mediaContent/mediaContent.module';
 import { SubCategoriesModule } from './subCategories/subCategories.module';
 import { ProductTypesModule } from './productTypes/productTypes.module';
+import { ColorsModule } from './colors/colors.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { ProductTypesModule } from './productTypes/productTypes.module';
     SubCategoriesModule,
     ProductTypesModule,
     ImagesModule,
+    ColorsModule
 
   ],
   controllers: [AppController],

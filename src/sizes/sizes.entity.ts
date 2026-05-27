@@ -1,4 +1,4 @@
-import { ProductVariants } from 'src/productVariants/productVariants.entity';
+import { ProductVariants } from '../productVariants/productVariants.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'sizes' })
