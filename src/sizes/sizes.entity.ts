@@ -1,5 +1,4 @@
-import { OrderDetail } from '../orderDetail/orderDetail.entity';
-import { ProductSizes } from '../productSizes/productSizes.entity';
+import { ProductVariants } from 'src/productVariants/productVariants.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'sizes' })
@@ -13,9 +12,7 @@ export class Sizes {
   @Column({ default: true })
   state: boolean;
 
-  @OneToMany(() => ProductSizes, (productSize) => productSize.size)
-  productSizes: ProductSizes[];
+  @OneToMany(() => ProductVariants, (variant) => variant.size)
+  variants: ProductVariants[];
 
-  @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.size)
-  orderDetail: OrderDetail[];
 }

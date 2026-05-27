@@ -3,9 +3,9 @@ import { Brands } from "../brands/brands.entity";
 import { Categories } from "../categories/categories.entity";
 import { Images } from "../images/images.entity";
 import { OrderDetail } from "../orderDetail/orderDetail.entity";
-import { ProductSizes } from "../productSizes/productSizes.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { ProductTypes } from "../productTypes/productTypes.entity";
+import { ProductVariants } from "src/productVariants/productVariants.entity";
 
 @Entity({ name: 'products' })
 export class Products {
@@ -52,8 +52,8 @@ export class Products {
     @OneToMany(() => Images, (image) => image.product)
     images: Images[];
 
-    @OneToMany(() => ProductSizes, (productSize) => productSize.product)
-    productSizes: ProductSizes[];
+    @OneToMany(() => ProductVariants, (variant) => variant.product)
+    variants: ProductVariants[];
 
     @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.product)
     orderDetail: OrderDetail[];

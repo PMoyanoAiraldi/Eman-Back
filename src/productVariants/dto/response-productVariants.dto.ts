@@ -1,4 +1,4 @@
-export class ResponseProductSizeDto {
+export class ResponseProductVariantsDto {
 
     stock: number;
 
@@ -10,5 +10,11 @@ export class ResponseProductSizeDto {
     size: {
         id: string;
         name: string;
+    };
+
+    color: {
+        id: string;
+        name: string;
+        hex: string;  
     };
 }

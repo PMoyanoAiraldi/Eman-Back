@@ -50,12 +50,17 @@ export class ResponseProductDto {
         order: number;
     }[];
 
-    productSizes: {
+    variants: {
         id: string;
         stock: number;
         size: {
             id: string;
             name: string;
         };
+        color: {
+        id: string;
+        name: string;
+        hex: string;  
+    };
     }[];
 }

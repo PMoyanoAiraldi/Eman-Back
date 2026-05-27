@@ -1,6 +1,6 @@
 import { IsNumber, IsUUID, Min } from "class-validator";
 
-export class CreateProductSizeDto {
+export class CreateProductVariantsDto {
     @IsNumber()
     @Min(0)
     stock: number;
@@ -10,4 +10,7 @@ export class CreateProductSizeDto {
 
     @IsUUID()
     productId: string;
+
+    @IsUUID()
+    colorId: string
 }

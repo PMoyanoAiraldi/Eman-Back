@@ -14,7 +14,7 @@ import { OrderModule } from './order/order.module';
 import { OrderDetailModule } from './orderDetail/orderDetail.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ProductsModule } from './products/products.module';
-import { ProductSizesModule } from './productSizes/productSizes.module';
+import { ProductVariantsModule } from './productVariants/productVariants.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SeedModule } from './seeds/seeds.module';
@@ -46,7 +46,7 @@ import { ProductTypesModule } from './productTypes/productTypes.module';
     OrderDetailModule,
     PaymentsModule,
     ProductsModule,
-    ProductSizesModule,
+    ProductVariantsModule,
     SizesModule,
     UsersModule,
     AuthModule,
@@ -56,7 +56,6 @@ import { ProductTypesModule } from './productTypes/productTypes.module';
     SubCategoriesModule,
     ProductTypesModule,
     ImagesModule,
-    ProductSizesModule
 
   ],
   controllers: [AppController],
