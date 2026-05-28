@@ -88,8 +88,9 @@ export class ProductsService {
             .leftJoinAndSelect('product.subcategory', 'subcategory')
             .leftJoinAndSelect('product.productType', 'productType')
             .leftJoinAndSelect('product.images', 'images')
-            .leftJoinAndSelect('product.productSizes', 'productSizes')
-            .leftJoinAndSelect('productSizes.size', 'size')
+            .leftJoinAndSelect('product.variants', 'variants')
+            .leftJoinAndSelect('variants.size', 'size')
+            .leftJoinAndSelect('variants.color', 'color')
             .where('product.state = :state', { state: true })
             .orderBy('product.createdAt', 'DESC');
 

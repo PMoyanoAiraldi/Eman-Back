@@ -44,7 +44,7 @@ export class ProductsController {
         }
     })
     async create(@Body() createProductDto: CreateProductDto): Promise<ResponseProductDto> {
-        return this.productsService.createProduct(createProductDto);
+        return await this.productsService.createProduct(createProductDto);
     }
 
     @Get()
