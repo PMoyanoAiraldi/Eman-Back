@@ -122,8 +122,9 @@ export class ProductsService {
                 'subcategory',
                 'productType',
                 'images',
-                'productSizes',
-                'productSizes.size'
+                'variants',
+                'variants.size',
+                'variants.color'
             ]
         });
         if (!product) throw new NotFoundException(`Producto con ID ${id} no encontrado`);
@@ -198,7 +199,7 @@ export class ProductsService {
     async getFeaturedProducts(): Promise<Products[]> {
         return this.productRepository.find({
             where: { isFeatured: true, state: true },
-            relations: ['images', 'category', 'brand', 'productSizes', 'productSizes.size'],
+            relations: ['images', 'category', 'brand', 'variants', 'variants.size', 'variants.color'],
             order: { createdAt: 'DESC' },
             take: 4
             });

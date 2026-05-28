@@ -6,7 +6,7 @@ import { Products } from "src/products/products.entity";
 import { Sizes } from "src/sizes/sizes.entity";
 import { CreateProductVariantsDto } from "./dto/create-productVariants.dto";
 import { Colors } from "src/colors/colors.entity";
-import { UpdateProductVariantsDto } from "./dto/update-productVariants.dto";
+import { UpdateStockProductVariantsDto } from "./dto/updateStock-productVariants.dto";
 
 
 @Injectable()
@@ -55,11 +55,11 @@ export class ProductVariantsService {
             return await this.productVariantsRepository.save(productVariants);
     }
 
-    async updateStock(id: string, updateProductVariantsDto: UpdateProductVariantsDto): Promise<ProductVariants>{
+    async updateStock(id: string, updateStockProductVariantsDto: UpdateStockProductVariantsDto): Promise<ProductVariants>{
         const productVariants = await this.productVariantsRepository.findOne({where: {id}});
             if (!productVariants) throw new NotFoundException('Variante de producto no encontrado');
         
-            productVariants.stock = updateProductVariantsDto.stock;
+            productVariants.stock = updateStockProductVariantsDto.stock;
             return this.productVariantsRepository.save(productVariants);
             
     }
@@ -68,7 +68,7 @@ export class ProductVariantsService {
         const productVariants = await this.productVariantsRepository.findOne({where: { id}});
                     
             if (!productVariants) {
-                throw new BadRequestException('La variante de producto no fue encontrado');
+                throw new NotFoundException('La variante de producto no fue encontrado');
             }
                     
             await this.productVariantsRepository.remove(productVariants);

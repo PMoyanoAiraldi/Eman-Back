@@ -9,7 +9,7 @@ import { rolEnum } from "src/users/users.entity";
 import { ProductVariants } from "./productVariants.entity";
 import { CreateProductVariantsDto } from "./dto/create-productVariants.dto";
 import { ResponseProductVariantsDto } from "./dto/response-productVariants.dto";
-import { UpdateProductVariantsDto } from "./dto/update-productVariants.dto";
+import { UpdateStockProductVariantsDto } from "./dto/updateStock-productVariants.dto";
 
 @ApiTags('Product_variants')
 @Controller("product_variants")
@@ -44,7 +44,7 @@ export class ProductVariantsController {
 
     @Patch(':id/stock')
     @ApiOperation({ summary: 'Modificar el stock de una variante de un producto' })
-    @ApiResponse({ status: 200, description: 'Stock modificado', type: UpdateProductVariantsDto })
+    @ApiResponse({ status: 200, description: 'Stock modificado', type: UpdateStockProductVariantsDto })
     @ApiResponse({ status: 404, description: 'Variante no encontrada' })
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(rolEnum.ADMIN)
@@ -58,8 +58,8 @@ export class ProductVariantsController {
             }
         }
     })
-    async update(@Param('id') id: string, @Body() updateProductVariantsDto: UpdateProductVariantsDto): Promise<ProductVariants> {
-            return this.productVariantsService.updateStock(id, updateProductVariantsDto);
+    async update(@Param('id') id: string, @Body() updateStockProductVariantsDto: UpdateStockProductVariantsDto): Promise<ProductVariants> {
+            return this.productVariantsService.updateStock(id, updateStockProductVariantsDto);
         }
 
     @Get('filter')
