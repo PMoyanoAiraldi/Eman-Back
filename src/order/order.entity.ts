@@ -22,6 +22,15 @@ export class Order {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
+    @Column({ length: 255, nullable: true })
+    guestName?: string;
+
+    @Column({ length: 255, nullable: true })
+    guestEmail?: string;
+
+    @Column({ length: 20, nullable: true })
+    guestPhone?: string;
+
     @Column('decimal', { precision: 10, scale: 2 })
     total: number;
 
@@ -34,8 +43,8 @@ export class Order {
     @Column({length: 255, default: 'Argentina'})
     country: string;
 
-    @Column()
-    zipCode: number;
+    @Column({ length: 10 })
+    zipCode: string;
 
     @Column({
         type: 'enum',
@@ -57,7 +66,10 @@ export class Order {
     @Column('decimal', { precision: 10, scale: 2, nullable: true })
     discountAmount?: number; 
 
-    @ManyToOne(() => Users, (user) => user.orders)
+    @Column('decimal', { precision: 10, scale: 2, nullable: true })
+    shippingCost?: number;
+
+    @ManyToOne(() => Users, (user) => user.orders, { nullable: true }) //para poder comprar sin registro del user
     @JoinColumn({ name: 'userId' })
     user: Users;
 

@@ -14,6 +14,9 @@ export class OrderDetail {
     @Column('decimal', { precision: 10, scale: 2 })
     unitPrice: number;
 
+    @Column({ length: 255 })
+    productName: string;
+
     @ManyToOne(() => Order, (orders) => orders.orderDetail)
     @JoinColumn({ name: 'orderId' })
     orders: Order;
