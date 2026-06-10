@@ -37,11 +37,11 @@ export class Payments {
     @Column('decimal', { precision: 10, scale: 2 })
     amount: number;
 
-    @Column()
-    installments: number;
+    @Column({ nullable: true })
+    installments?: number;
 
-    @Column('decimal', { precision: 10, scale: 2 })
-    installmentsAmount: number;
+    @Column('decimal', { precision: 10, scale: 2, nullable: true })
+    installmentsAmount?: number;
 
     @Column({ length: 255, nullable: true }) // nullable porque al crear el pago todavía no existe
     transactionId: string;
@@ -51,6 +51,12 @@ export class Payments {
 
     @CreateDateColumn()
     createdAt: Date;
+
+    @Column({ length: 255, nullable: true }) //Para rastrear el pago
+    preferenceId?: string;
+
+    @Column({ length: 255, nullable: true })
+    mpPaymentId?: string; //MP manda un webhook cuando se aprueba el pago 
 
     @ManyToOne(() => Order, (order) => order.payments)
     @JoinColumn({ name: 'orderId' })

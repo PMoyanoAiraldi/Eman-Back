@@ -1,5 +1,5 @@
-import { Controller } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Headers, HttpCode, Post } from "@nestjs/common";
+import { ApiBody, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { PaymentsService } from "./payments.service";
 
 @ApiTags('Payments')
@@ -8,4 +8,30 @@ export class PaymentsController {
     constructor(
         private readonly paymentsService: PaymentsService,
     ) { }
+
+    @Post('create-preference')
+    @ApiOperation({ summary: 'Crear preferencia de pago en MercadoPago' })
+    @ApiBody({
+    description: 'Datos para crear la preferencia de pago',
+    schema: {
+        type: 'object',
+        required: [ 'orderId', 'shippingCost'],
+        properties: {
+            orderId:      { type: 'string', example: 'uuid-de-la-orden' },
+            shippingCost: { type: 'number', example: 0 },
+        }
+    }
+    })
+    async createPreference(@Body() body: { orderId: string, shippingCost: number }) {
+        return this.paymentsService.createPreference(body.orderId, body.shippingCost)
+    }
+
+    @Post('webhook')
+    @HttpCode(200)
+    @ApiOperation({ summary: 'Webhook de MercadoPago' })
+    webhook(@Body() body: any) {
+        console.log('Webhook MP:', body)
+        // TODO: actualizar estado de la orden cuando el pago sea aprobado
+        return { received: true }
+    }
 }
