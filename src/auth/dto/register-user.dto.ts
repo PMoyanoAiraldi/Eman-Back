@@ -1,4 +1,5 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsString,  IsNotEmpty, Matches } from 'class-validator';
 
 export class RegisterUserDto {
     @IsString()
@@ -8,8 +9,19 @@ export class RegisterUserDto {
     @IsEmail()
     email: string;
 
+    @ApiProperty({
+                type: String,
+                description: "La contraseña debe contener al menos una letra minúscula, una letra mayúscula, un número y un carácter especial (!@#$%^&*)",
+                required: true,
+        })
+    @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[=!@#$%^&*])[A-Za-z\d=!@#$%^&*]{8,15}$/,
+    {
+    message: "La contraseña debe contener al menos una letra minúscula, una letra mayúscula, un número y un carácter especial (!@#$%^&*)"
+    }
+    )
+    @IsNotEmpty()
     @IsString()
-    @MinLength(6)
     password: string;
 
     @IsString()
