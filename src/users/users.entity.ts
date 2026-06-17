@@ -21,6 +21,9 @@ export class Users {
     @Column({ length: 255, nullable: false})
     city: string
 
+    @Column({ length: 255, nullable: false})
+    province: string;
+
     @Column({ length: 20, nullable: false})
     phone: string;
 

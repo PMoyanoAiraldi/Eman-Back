@@ -86,6 +86,7 @@ export class AuthService {
             email: user.email,
             address: user.address,
             city: user.city,
+            province: user.province,
             phone: user.phone,
             state: user.state,
             rol: user.rol,

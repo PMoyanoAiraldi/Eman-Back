@@ -34,5 +34,9 @@ export class RegisterUserDto {
 
     @IsString()
     @IsNotEmpty()
+    province: string;
+
+    @IsString()
+    @IsNotEmpty()
     phone: string;
 }
