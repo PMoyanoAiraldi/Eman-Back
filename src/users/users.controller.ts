@@ -88,6 +88,7 @@ export class UsersController {
                 name: { type: 'string' },
                 address: { type: 'string' },
                 city: { type: 'string' },
+                province: { type: 'string'},
                 phone: { type: 'string' },
             }
         }

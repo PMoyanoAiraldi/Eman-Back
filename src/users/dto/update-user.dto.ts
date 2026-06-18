@@ -18,6 +18,12 @@ export class UpdateUserDto {
     @IsOptional()
     city?: string;
 
+    
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    province?: string;
+
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()

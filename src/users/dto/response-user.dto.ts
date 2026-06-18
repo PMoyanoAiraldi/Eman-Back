@@ -18,6 +18,9 @@ export class UserResponseDto {
     city: string;
 
     @ApiProperty()
+    province: string;
+
+    @ApiProperty()
     phone: string;
 
     @ApiProperty()
