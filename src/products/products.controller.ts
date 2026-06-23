@@ -70,7 +70,7 @@ export class ProductsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(rolEnum.ADMIN)
     @ApiSecurity('bearer')
-    async findAllForAdmin(): Promise<Products[]> {
+    async findAllForAdmin(): Promise<ResponseProductDto[]> {
         return this.productsService.getAllProducts();
     }
 

@@ -70,7 +70,15 @@ export class ProductsService {
 
     async getAllProducts(): Promise<Products[]> {
         return this.productRepository.find({
-            relations: ['brand', 'category', 'subcategory', 'productType', 'images'],
+            relations: [
+                'brand', 
+                'category', 
+                'subcategory', 
+                'productType', 
+                'variants', 
+                'variants.size',  
+                'variants.color', 
+                'images'],
             order: { createdAt: 'DESC' }
         });
     }
