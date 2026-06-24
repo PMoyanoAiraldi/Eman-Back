@@ -151,9 +151,6 @@ export class ProductsService {
         if (updateProductDto.name) {
             const normalizedName = updateProductDto.name.trim().toLowerCase();
             
-        if (product.name.toLowerCase() === normalizedName) {
-            throw new BadRequestException('El nombre es igual al actual');
-        }
             const existing = await this.productRepository
                 .createQueryBuilder('product')
                 .where('LOWER(product.name) = :name', { name: normalizedName })
