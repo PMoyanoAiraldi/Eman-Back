@@ -1,6 +1,7 @@
 import { Body, Controller, Headers, HttpCode, Post } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { PaymentsService } from "./payments.service";
+import type { ProcessPaymentDto  } from './payments.types';
 
 @ApiTags('Payments')
 @Controller("payments")
@@ -34,4 +35,9 @@ export class PaymentsController {
         // TODO: actualizar estado de la orden cuando el pago sea aprobado
         return { received: true }
     }
+
+    @Post('process-payment')
+    async processPayment(@Body() body: ProcessPaymentDto) {
+        return this.paymentsService.processPayment(body.formData, body.orderId);
+}
 }
