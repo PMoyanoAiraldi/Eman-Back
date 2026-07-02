@@ -1,18 +1,33 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Order } from 'src/order/order.entity';
+import { Order } from '../order/order.entity';
 import { DataSource, Repository } from 'typeorm';
 import { Payment } from 'mercadopago';
 import { PaymentFormData } from './payments.types';
-import { stateEnum } from 'src/order/order.entity';
+import { stateEnum } from '../order/order.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { LessThan } from 'typeorm';
-import { ProductVariants } from 'src/productVariants/productVariants.entity';
+import { ProductVariants } from '../productVariants/productVariants.entity';
+import { methodEnum, Payments, statusEnum } from './payments.entity';
 
 // Tarjetas que NO queremos ofrecer (todo lo que no sea Visa/Mastercard).
 // Si Andrea quiere sumar/sacar alguna en el futuro, se edita esta lista.
 const EXCLUDED_CARD_BRANDS = ['amex', 'naranja', 'cabal', 'cencosud', 'tarshop', 'diners'];
+
+// Traduce lo que devuelve MP a tus enums en español
+const mapMethod = (paymentTypeId: string): methodEnum => {
+    if (paymentTypeId === 'debit_card') return methodEnum.TARJETA_DEBITO;
+    if (paymentTypeId === 'credit_card') return methodEnum.TARJETA_CREDITO;
+    return methodEnum.TRANSFERENCIA;
+};
+
+const mapStatus = (mpStatus: string): statusEnum => {
+    if (mpStatus === 'approved') return statusEnum.APROBADO;
+    if (mpStatus === 'rejected') return statusEnum.RECHAZADO;
+    return statusEnum.PENDIENTE; // in_process
+};
+
 
 @Injectable()
 export class PaymentsService {
@@ -21,6 +36,8 @@ export class PaymentsService {
     constructor(
         @InjectRepository(Order)
         private readonly orderRepository: Repository<Order>,
+        @InjectRepository(Payments)
+        private readonly paymentsRepository: Repository<Payments>,
         private dataSource: DataSource,
     ) {
         this.client = new MercadoPagoConfig({
@@ -94,6 +111,21 @@ export class PaymentsService {
                 },
             },
         });
+
+        // Guardamos el registro del pago
+        const paymentRecord = this.paymentsRepository.create({
+            order:              order,
+            method:             mapMethod(result.payment_type_id ?? ''),
+            status:             mapStatus(result.status ?? ''),
+            amount:             Number(order.total),
+            installments:       result.installments,
+            installmentsAmount: result.transaction_details?.installment_amount,
+            transactionId:      String(result.id),
+            mpPaymentId:        String(result.id),
+            paidAt:             result.status === 'approved' ? new Date() : undefined,
+        });
+        await this.paymentsRepository.save(paymentRecord);
+
 
         // Actualizamos el estado de la orden según lo que respondió MP
         if (result.status === 'approved') {
