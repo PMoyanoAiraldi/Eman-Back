@@ -124,6 +124,7 @@ export class OrderService {
         relations: [
             'orderDetail',
             'orderDetail.product',
+            'orderDetail.product.images', 
             'orderDetail.variant',
             'orderDetail.variant.size',
             'orderDetail.variant.color',
@@ -149,13 +150,20 @@ export class OrderService {
         city: order.city,
         zipCode: order.zipCode,
         createdAt: order.createdAt,
-        items: order.orderDetail.map(detail => ({
+        items: order.orderDetail.map(detail => {
+            // Buscamos la imagen marcada como principal; si no hay ninguna, usamos la primera disponible
+            const primaryImage = detail.product?.images?.find(img => img.isPrimary)
+            const fallbackImage = detail.product?.images?.[0]
+
+            return{
             productName: detail.productName,
             quantity: detail.quantity,
             unitPrice: detail.unitPrice,
             color: detail.variant?.color?.name,
             size: detail.variant?.size?.name,
-        })),
+            image: primaryImage?.url ?? fallbackImage?.url ?? null,
+            }
+        }),
         payment: lastPayment ? {
             method: lastPayment.method,
             status: lastPayment.status,
