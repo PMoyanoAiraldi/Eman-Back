@@ -119,58 +119,62 @@ export class OrderService {
     }
 
     async getOrderSummary(id: string) {
-    const order = await this.orderRepository.findOne({
-        where: { id },
-        relations: [
-            'orderDetail',
-            'orderDetail.product',
-            'orderDetail.product.images', 
-            'orderDetail.variant',
-            'orderDetail.variant.size',
-            'orderDetail.variant.color',
-            'payments', // para traer el método de pago y cuotas
-        ],
-    })
-    if (!order) throw new NotFoundException(`Orden con ID ${id} no encontrada`)
+        const order = await this.orderRepository.findOne({
+            where: { id },
+            relations: [
+                'orderDetail',
+                'orderDetail.product',
+                'orderDetail.product.images', 
+                'orderDetail.variant',
+                'orderDetail.variant.size',
+                'orderDetail.variant.color',
+                'payments', // para traer el método de pago y cuotas
+            ],
+        })
+        if (!order) throw new NotFoundException(`Orden con ID ${id} no encontrada`)
 
-    // Tomamos el pago más reciente (por si hubo reintentos)
-    const lastPayment = order.payments?.length
-        ? order.payments[order.payments.length - 1]
-        : null
+        // Tomamos el pago más reciente (por si hubo reintentos)
+        const lastPayment = order.payments?.length
+            ? order.payments[order.payments.length - 1]
+            : null
 
-    // Solo devolvemos lo necesario para mostrarle al cliente —
-    // nada de datos internos sensibles
-    return {
-        id: order.id,
-        state: order.state,
-        total: order.total,
-        shippingCost: order.shippingCost,
-        shippingType: order.shippingType,
-        address: order.address,
-        city: order.city,
-        zipCode: order.zipCode,
-        createdAt: order.createdAt,
-        items: order.orderDetail.map(detail => {
-            // Buscamos la imagen marcada como principal; si no hay ninguna, usamos la primera disponible
-            const primaryImage = detail.product?.images?.find(img => img.isPrimary)
-            const fallbackImage = detail.product?.images?.[0]
+        // Si hubo pago aprobado, el total "real" es lo que se cobró en la tarjeta (puede incluir interés).
+        // Si no, mostramos el total de catálogo de la orden.
+        const displayTotal = lastPayment?.amount ?? order.total    
 
-            return{
-            productName: detail.productName,
-            quantity: detail.quantity,
-            unitPrice: detail.unitPrice,
-            color: detail.variant?.color?.name,
-            size: detail.variant?.size?.name,
-            image: primaryImage?.url ?? fallbackImage?.url ?? null,
-            }
-        }),
-        payment: lastPayment ? {
-            method: lastPayment.method,
-            status: lastPayment.status,
-            installments: lastPayment.installments,
-            installmentsAmount: lastPayment.installmentsAmount,
-        } : null,
+        // Solo devolvemos lo necesario para mostrarle al cliente —
+        // nada de datos internos sensibles
+        return {
+            id: order.id,
+            state: order.state,
+            total: displayTotal,
+            shippingCost: order.shippingCost,
+            shippingType: order.shippingType,
+            address: order.address,
+            city: order.city,
+            zipCode: order.zipCode,
+            createdAt: order.createdAt,
+            items: order.orderDetail.map(detail => {
+                // Buscamos la imagen marcada como principal; si no hay ninguna, usamos la primera disponible
+                const primaryImage = detail.product?.images?.find(img => img.isPrimary)
+                const fallbackImage = detail.product?.images?.[0]
+
+                return{
+                    productName: detail.productName,
+                    quantity: detail.quantity,
+                    unitPrice: detail.unitPrice,
+                    color: detail.variant?.color?.name,
+                    size: detail.variant?.size?.name,
+                    image: primaryImage?.url ?? fallbackImage?.url ?? null,
+                    }
+                }),
+                payment: lastPayment ? {
+                    method: lastPayment.method,
+                    status: lastPayment.status,
+                    installments: lastPayment.installments,
+                    installmentsAmount: lastPayment.installmentsAmount,
+                } : null,
+        }
     }
-}
 }
 

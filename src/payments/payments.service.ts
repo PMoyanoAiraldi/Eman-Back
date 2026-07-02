@@ -112,12 +112,15 @@ export class PaymentsService {
             },
         });
 
+        // Monto real que se le cobró en la tarjeta (puede incluir interés por cuotas)
+        const totalPaid = result.transaction_details?.total_paid_amount ?? Number(order.total);
+
         // Guardamos el registro del pago
         const paymentRecord = this.paymentsRepository.create({
             order:              order,
             method:             mapMethod(result.payment_type_id ?? ''),
             status:             mapStatus(result.status ?? ''),
-            amount:             Number(order.total),
+            amount:             totalPaid,
             installments:       result.installments,
             installmentsAmount: result.transaction_details?.installment_amount,
             transactionId:      String(result.id),
@@ -125,7 +128,6 @@ export class PaymentsService {
             paidAt:             result.status === 'approved' ? new Date() : undefined,
         });
         await this.paymentsRepository.save(paymentRecord);
-
 
         // Actualizamos el estado de la orden según lo que respondió MP
         if (result.status === 'approved') {
