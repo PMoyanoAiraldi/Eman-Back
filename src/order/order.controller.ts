@@ -105,4 +105,12 @@ export class OrderController {
     ) {
         return this.orderService.updateState(id, state)
     }
+
+    @Get(':id/summary')
+    @ApiOperation({ summary: 'Resumen de una orden - Público (para pantalla de confirmación)' })
+    @ApiResponse({ status: 200, description: 'Resumen de la orden' })
+    @ApiResponse({ status: 404, description: 'Orden no encontrada' })
+    findSummary(@Param('id') id: string) {
+    return this.orderService.getOrderSummary(id)
+}
 }

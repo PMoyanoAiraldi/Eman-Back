@@ -117,4 +117,52 @@ export class OrderService {
         order.state = state 
         return this.orderRepository.save(order)
     }
+
+    async getOrderSummary(id: string) {
+    const order = await this.orderRepository.findOne({
+        where: { id },
+        relations: [
+            'orderDetail',
+            'orderDetail.product',
+            'orderDetail.variant',
+            'orderDetail.variant.size',
+            'orderDetail.variant.color',
+            'payments', // para traer el método de pago y cuotas
+        ],
+    })
+    if (!order) throw new NotFoundException(`Orden con ID ${id} no encontrada`)
+
+    // Tomamos el pago más reciente (por si hubo reintentos)
+    const lastPayment = order.payments?.length
+        ? order.payments[order.payments.length - 1]
+        : null
+
+    // Solo devolvemos lo necesario para mostrarle al cliente —
+    // nada de datos internos sensibles
+    return {
+        id: order.id,
+        state: order.state,
+        total: order.total,
+        shippingCost: order.shippingCost,
+        shippingType: order.shippingType,
+        address: order.address,
+        city: order.city,
+        zipCode: order.zipCode,
+        createdAt: order.createdAt,
+        items: order.orderDetail.map(detail => ({
+            productName: detail.productName,
+            quantity: detail.quantity,
+            unitPrice: detail.unitPrice,
+            color: detail.variant?.color?.name,
+            size: detail.variant?.size?.name,
+        })),
+        payment: lastPayment ? {
+            method: lastPayment.method,
+            status: lastPayment.status,
+            installments: lastPayment.installments,
+            installmentsAmount: lastPayment.installmentsAmount,
+        } : null,
+    }
 }
+}
+
