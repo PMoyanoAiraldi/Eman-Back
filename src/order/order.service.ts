@@ -148,6 +148,7 @@ export class OrderService {
             id: order.id,
             state: order.state,
             total: displayTotal,
+            catalogTotal: Number(order.total),
             shippingCost: order.shippingCost,
             shippingType: order.shippingType,
             address: order.address,

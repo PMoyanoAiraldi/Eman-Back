@@ -112,6 +112,8 @@ export class PaymentsService {
             },
         });
 
+        console.log('MP result completo:', JSON.stringify(result, null, 2));
+
         // Monto real que se le cobró en la tarjeta (puede incluir interés por cuotas)
         const totalPaid = result.transaction_details?.total_paid_amount ?? Number(order.total);
 
@@ -141,6 +143,9 @@ export class PaymentsService {
             status: result.status,            // 'approved' | 'rejected' | 'in_process'
             statusDetail: result.status_detail,
             paymentId: result.id,
+            totalPaid,
+            installments: result.installments,
+            installmentsAmount: result.transaction_details?.installment_amount,
         };
     }
 
