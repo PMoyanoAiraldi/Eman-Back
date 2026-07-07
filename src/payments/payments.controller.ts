@@ -1,7 +1,7 @@
-import { Body, Controller, Headers, HttpCode, Post } from "@nestjs/common";
+import { Body, Controller, Headers, HttpCode, Post, Query } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { PaymentsService } from "./payments.service";
-import type { ProcessPaymentDto  } from './payments.types';
+import type { ProcessPaymentDto, MercadoPagoWebhookQuery, MercadoPagoWebhookBody  } from './payments.types';
 
 @ApiTags('Payments')
 @Controller("payments")
@@ -30,14 +30,16 @@ export class PaymentsController {
     @Post('webhook')
     @HttpCode(200)
     @ApiOperation({ summary: 'Webhook de MercadoPago' })
-    webhook(@Body() body: any) {
-        console.log('Webhook MP:', body)
-        // TODO: actualizar estado de la orden cuando el pago sea aprobado
-        return { received: true }
+    async handleWebhook(
+        @Body() body: MercadoPagoWebhookBody,
+        @Query() query: MercadoPagoWebhookQuery,
+    ) {
+        return this.paymentsService.handleWebhook(body, query);
     }
 
     @Post('process-payment')
     async processPayment(@Body() body: ProcessPaymentDto) {
         return this.paymentsService.processPayment(body.formData, body.orderId);
-}
+    }
+
 }

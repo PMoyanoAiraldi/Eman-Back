@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from '../order/order.entity';
 import { DataSource, Repository } from 'typeorm';
 import { Payment } from 'mercadopago';
-import { PaymentFormData } from './payments.types';
+import { PaymentFormData, MercadoPagoWebhookQuery, MercadoPagoWebhookBody } from './payments.types';
 import { stateEnum } from '../order/order.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { LessThan } from 'typeorm';
@@ -77,9 +77,9 @@ export class PaymentsService {
                     ],
                 },
                 // back_urls: {
-                //     success: `${process.env.FRONTEND_URL}/orden-confirmada`, debo colcoar la url deployada en .env para que funcione
+                //     success: `${process.env.FRONTEND_URL}/order-confirm?orderId=${orderId}`, debo colcoar la url deployada en .env para que funcione
                 //     failure: `${process.env.FRONTEND_URL}/checkout`,
-                //     pending: `${process.env.FRONTEND_URL}/orden-pendiente`,
+                //     pending: `${process.env.FRONTEND_URL}/order-pending?orderId=${orderId}`,
                 //},
                 //auto_return: 'approved',
                 external_reference: orderId,
@@ -109,6 +109,8 @@ export class PaymentsService {
                     email: formData.payer.email,
                     identification: formData.payer.identification,
                 },
+                external_reference: orderId,
+                notification_url: `${process.env.BACKEND_URL}/payments/webhook`,
             },
         });
 
@@ -183,5 +185,70 @@ export class PaymentsService {
         if (orderExpired.length > 0) {
             console.log(`Canceladas ${orderExpired.length} órdenes vencidas, stock repuesto`);
         }
+    }
+
+    async handleWebhook(body: MercadoPagoWebhookBody, query: MercadoPagoWebhookQuery) {
+        console.log('🔔 Webhook recibido:', { body, query });
+
+        // El id puede venir en el body o en el query, según el tipo de notificación
+        const paymentId = query['data.id'] || body?.data?.id;
+        const type = query['type'] || body?.type;
+
+        // Solo nos interesan notificaciones de pago (MP también manda otros tipos, como 'merchant_order')
+        if (type !== 'payment' || !paymentId) {
+            return { received: true }; // igual respondemos 200, no es un error
+        }
+
+        // PASO CLAVE: no confiamos en el body, consultamos el pago real a la API de MP
+        const payment = new Payment(this.client);
+        const paymentData = await payment.get({ id: paymentId });
+
+        const orderId = paymentData.external_reference;
+        if (!orderId) return { received: true };
+
+        const order = await this.orderRepository.findOne({ where: { id: orderId } });
+        if (!order) return { received: true };
+
+        // Idempotencia: si ya está confirmada, no reprocesamos
+        if (order.state === stateEnum.CONFIRMADO && paymentData.status === 'approved') {
+            return { received: true };
+        }
+
+        // Guardamos/actualizamos el registro de pago con los datos reales
+        const existingPayment = await this.paymentsRepository.findOne({
+            where: { mpPaymentId: String(paymentData.id) },
+        });
+
+        const totalPaid = paymentData.transaction_details?.total_paid_amount ?? Number(order.total);
+
+        if (existingPayment) {
+            existingPayment.status = mapStatus(paymentData.status ?? '');
+            existingPayment.amount = totalPaid;
+            existingPayment.paidAt = paymentData.status === 'approved' ? new Date() : existingPayment.paidAt;
+            await this.paymentsRepository.save(existingPayment);
+        } else {
+            const newPayment = this.paymentsRepository.create({
+                order,
+                method: mapMethod(paymentData.payment_type_id ?? ''),
+                status: mapStatus(paymentData.status ?? ''),
+                amount: totalPaid,
+                installments: paymentData.installments,
+                installmentsAmount: paymentData.transaction_details?.installment_amount,
+                transactionId: String(paymentData.id),
+                mpPaymentId: String(paymentData.id),
+                paidAt: paymentData.status === 'approved' ? new Date() : undefined,
+            });
+            await this.paymentsRepository.save(newPayment);
+        }
+
+        // Actualizamos el estado de la orden
+        if (paymentData.status === 'approved') {
+            await this.orderRepository.update(orderId, { state: stateEnum.CONFIRMADO });
+            // Acá dispara el email de confirmación (próximo paso)
+        } else if (paymentData.status === 'rejected') {
+            await this.orderRepository.update(orderId, { state: stateEnum.CANCELADO });
+        }
+
+        return { received: true };
     }
 }
