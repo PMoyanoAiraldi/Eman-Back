@@ -10,6 +10,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { LessThan } from 'typeorm';
 import { ProductVariants } from '../productVariants/productVariants.entity';
 import { methodEnum, Payments, statusEnum } from './payments.entity';
+import { EmailService } from 'src/email/email.service';
 
 // Tarjetas que NO queremos ofrecer (todo lo que no sea Visa/Mastercard).
 // Si Andrea quiere sumar/sacar alguna en el futuro, se edita esta lista.
@@ -39,6 +40,7 @@ export class PaymentsService {
         @InjectRepository(Payments)
         private readonly paymentsRepository: Repository<Payments>,
         private dataSource: DataSource,
+        private readonly emailService: EmailService
     ) {
         this.client = new MercadoPagoConfig({
             accessToken: process.env.MP_ACCESS_TOKEN as string,
@@ -136,6 +138,11 @@ export class PaymentsService {
         // Actualizamos el estado de la orden según lo que respondió MP
         if (result.status === 'approved') {
             await this.orderRepository.update(orderId, { state: stateEnum.CONFIRMADO });
+
+            if (!order.confirmationEmailSentAt) {
+            await this.emailService.sendPaymentConfirmation(order);
+            await this.orderRepository.update(orderId, { confirmationEmailSentAt: new Date() });
+        }
         } else if (result.status === 'rejected') {
             await this.orderRepository.update(orderId, { state: stateEnum.CANCELADO });
         }
@@ -244,7 +251,11 @@ export class PaymentsService {
         // Actualizamos el estado de la orden
         if (paymentData.status === 'approved') {
             await this.orderRepository.update(orderId, { state: stateEnum.CONFIRMADO });
-            // Acá dispara el email de confirmación (próximo paso)
+             // Evitar reenviar el mail si el webhook llega duplicado
+            if (!order.confirmationEmailSentAt) {
+                await this.emailService.sendPaymentConfirmation(order);
+                await this.orderRepository.update(orderId, { confirmationEmailSentAt: new Date() });
+            }
         } else if (paymentData.status === 'rejected') {
             await this.orderRepository.update(orderId, { state: stateEnum.CANCELADO });
         }

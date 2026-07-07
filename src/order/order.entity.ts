@@ -63,6 +63,9 @@ export class Order {
     })
     state: stateEnum
 
+    @Column({ type: 'timestamp', nullable: true })
+    confirmationEmailSentAt: Date | null;
+
     @Column('decimal', { precision: 10, scale: 2, nullable: true })
     discountAmount?: number; 
 

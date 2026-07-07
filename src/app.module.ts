@@ -24,6 +24,7 @@ import { SubCategoriesModule } from './subCategories/subCategories.module';
 import { ProductTypesModule } from './productTypes/productTypes.module';
 import { ColorsModule } from './colors/colors.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ProductTypesModule,
     ImagesModule,
     ColorsModule,
+    EmailModule,
     ScheduleModule.forRoot()
 
   ],
