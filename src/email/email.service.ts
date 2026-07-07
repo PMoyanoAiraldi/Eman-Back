@@ -45,4 +45,38 @@ export class EmailService {
             this.logger.error(`Error enviando email de confirmación para orden ${order.id}`, error);
         }
     }
+
+    
+
+async sendDispatchNotification(order: Order) {
+    if (!order.guestEmail) {
+        this.logger.warn(`Orden ${order.id} sin email, no se puede enviar notificación de despacho`);
+        return;
+    }
+
+    try {
+        const response = await this.resend.emails.send({
+            from: 'Eman <onboarding@resend.dev>',
+            to: order.guestEmail,
+            subject: `¡Tu pedido #${order.id.slice(0, 8)} fue despachado!`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+                    <h2 style="color: #C9A84C;">¡Tu pedido está en camino, ${order.guestName}!</h2>
+                    <p>Ya despachamos tu pedido por Correo Argentino.</p>
+                    <p><strong>Número de orden:</strong> ${order.id}</p>
+                    <p>Vas a recibirlo en la dirección que indicaste al momento de la compra.</p>
+                </div>
+            `,
+        });
+
+        if (response.error) {
+            this.logger.error(`Resend rechazó el envío de despacho para orden ${order.id}: ${JSON.stringify(response.error)}`);
+            return;
+        }
+
+        this.logger.log(`Email de despacho enviado para orden ${order.id}`);
+    } catch (error) {
+        this.logger.error(`Error enviando email de despacho para orden ${order.id}`, error);
+    }
+}
 }

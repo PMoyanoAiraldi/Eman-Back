@@ -112,5 +112,6 @@ export class OrderController {
     @ApiResponse({ status: 404, description: 'Orden no encontrada' })
     findSummary(@Param('id') id: string) {
     return this.orderService.getOrderSummary(id)
-}
+    }
+
 }

@@ -1,10 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Order, stateEnum } from "./order.entity";
+import { Order, shippingTypeEnum, stateEnum } from "./order.entity";
 import { DataSource, Repository } from "typeorm";
 import { OrderDetail } from "src/orderDetail/orderDetail.entity";
 import { ProductVariants } from "src/productVariants/productVariants.entity";
 import { CreateOrderDto } from "./dto/create-order.dto";
+import { EmailService } from "src/email/email.service";
 
 @Injectable()
 export class OrderService {
@@ -16,6 +17,7 @@ export class OrderService {
         @InjectRepository(ProductVariants)
         private variantRepository: Repository<ProductVariants>,
         private dataSource: DataSource,
+        private emailService: EmailService
     ) { }
 
     async createOrder(createOrderDto: CreateOrderDto): Promise<Order> {
@@ -115,7 +117,17 @@ export class OrderService {
     async updateState(id: string, state: stateEnum): Promise<Order> {
         const order = await this.getOrderById(id)
         order.state = state 
-        return this.orderRepository.save(order)
+        
+        const updatedOrder = await this.orderRepository.save(order)
+
+        // Solo avisamos por mail si pasa a "Enviado" y es Correo Argentino.
+        // Coordinado y Retiro se resuelven por WhatsApp / entrega en persona,
+        // esos casos van directo a "Entregado" sin pasar por acá.
+        if (state === stateEnum.ENVIADO && order.shippingType === shippingTypeEnum.CORREO_ARGENTINO) {
+            await this.emailService.sendDispatchNotification(order)
+        }
+
+        return updatedOrder
     }
 
     async getOrderSummary(id: string) {
