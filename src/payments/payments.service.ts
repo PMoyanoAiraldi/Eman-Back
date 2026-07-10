@@ -97,8 +97,10 @@ export class PaymentsService {
         const order = await this.orderRepository.findOne({ where: { id: orderId } });
         if (!order) throw new NotFoundException(`Orden ${orderId} no encontrada`);
 
+        
         const payment = new Payment(this.client);
 
+        console.log('Token recibido:', formData.token, 'Timestamp:', new Date().toISOString()) 
         const result = await payment.create({
             body: {
                 transaction_amount: Number(order.total), // importante: el monto sale de TU orden, no del formData del front (evita manipulación)

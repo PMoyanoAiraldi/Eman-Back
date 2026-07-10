@@ -83,6 +83,10 @@ export class ImagesService {
         });
         if (!image) throw new NotFoundException('Imagen no encontrada');
 
+        // 1. Borrar de Cloudinary primero
+        await this.cloudinaryService.deleteFile(image.url);
+
+        // 2. Si Cloudinary salió bien, recién ahí tocamos la DB
         // Si era primaria, asignamos la siguiente como primaria
         if (image.isPrimary) {
             const nextImage = image.product.images.find(
@@ -93,10 +97,6 @@ export class ImagesService {
                 await this.imagesRepository.save(nextImage);
             }
         }
-
-        await this.cloudinaryService.deleteFile(image.url).catch(
-            err => console.error('Error al eliminar de Cloudinary:', err)
-        );
 
         await this.imagesRepository.remove(image);
     }
