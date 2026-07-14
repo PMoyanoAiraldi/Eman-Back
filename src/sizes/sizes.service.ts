@@ -25,7 +25,7 @@ export class SizesService {
             }   
             
             const size = this.sizesRepository.create({
-                name: createSizeDto.name.trim()
+                name: createSizeDto.name.trim().toUpperCase()
             });
             console.log("Talle antes de ser guardado", size)
     
