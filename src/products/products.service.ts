@@ -210,6 +210,12 @@ export class ProductsService {
             });
     }
 
+    async publish(id: string): Promise<Products> {
+        const product = await this.productRepository.findOne({ where: { id } });
+        if (!product) throw new NotFoundException('Producto no encontrado');
+        product.isDraft = false;
+        return await this.productRepository.save(product);
+    }
 
 
 }

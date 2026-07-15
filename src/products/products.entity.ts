@@ -33,6 +33,9 @@ export class Products {
     @Column({ default: false })
     isFeatured: boolean;
 
+    @Column({ default: true })
+    isDraft: boolean;
+
     @ManyToOne(() => Brands, (brand) => brand.products)
     @JoinColumn({ name: 'brandId' })
     brand?: Brands | null;

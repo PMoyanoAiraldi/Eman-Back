@@ -140,4 +140,14 @@ export class ProductsController {
         return this.productsService.updateState(id, updateProductStateDto.state);
     }
 
+    @Patch(':id/publish')
+    @ApiOperation({ summary: 'Publicar un producto (sacarlo de borrador) - Solo Admin' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
+    @ApiSecurity('bearer')
+    async publish(@Param('id') id: string): Promise<ResponseProductDto> {
+        return this.productsService.publish(id);
+    }
+
+
 }
