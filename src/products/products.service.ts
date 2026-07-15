@@ -100,6 +100,7 @@ export class ProductsService {
             .leftJoinAndSelect('variants.size', 'size')
             .leftJoinAndSelect('variants.color', 'color')
             .where('product.state = :state', { state: true })
+            .andWhere('product.isDraft = :isDraft', { isDraft: false })
             .orderBy('product.createdAt', 'DESC');
 
             if (filters?.categoryId) {
@@ -141,7 +142,7 @@ export class ProductsService {
 
     async getProductActive(id: string): Promise<Products> {
         const product = await this.getProduct(id);
-        if (!product.state) throw new NotFoundException(`Producto con ID ${id} no encontrado`);
+        if (!product.state || product.isDraft) throw new NotFoundException(`Producto con ID ${id} no encontrado`);
         return product;
     }
 
@@ -203,7 +204,7 @@ export class ProductsService {
 
     async getFeaturedProducts(): Promise<Products[]> {
         return this.productRepository.find({
-            where: { isFeatured: true, state: true },
+            where: { isFeatured: true, state: true, isDraft: false  },
             relations: ['images', 'category', 'brand', 'variants', 'variants.size', 'variants.color'],
             order: { createdAt: 'DESC' },
             take: 4
@@ -211,11 +212,37 @@ export class ProductsService {
     }
 
     async publish(id: string): Promise<Products> {
-        const product = await this.productRepository.findOne({ where: { id } });
+        const product = await this.productRepository.findOne({ 
+            where: { id },
+            relations: ['images', 'variants']
+        });
         if (!product) throw new NotFoundException('Producto no encontrado');
+
+        const missing: string[] = [];
+        if (!product.images || product.images.length === 0) missing.push('imagen');
+        if (!product.variants || product.variants.length === 0) missing.push('variantes (talle/color)');
+        else if (!product.variants.some(v => v.stock > 0)) missing.push('stock');
+        if (!product.price || Number(product.price) <= 0) missing.push('precio');
+
+        if (missing.length > 0) {
+            throw new BadRequestException(
+                `No se puede publicar: falta ${missing.join(', ')}.`
+            );
+        }
+
         product.isDraft = false;
         return await this.productRepository.save(product);
     }
+
+    async deleteDraft(id: string): Promise<{ message: string }> {
+        const product = await this.productRepository.findOne({ where: { id } });
+            if (!product) throw new NotFoundException('Producto no encontrado');
+            if (!product.isDraft) {
+                throw new BadRequestException('Solo se pueden eliminar productos en borrador.');
+            }
+            await this.productRepository.remove(product);
+            return { message: 'Borrador eliminado correctamente' };
+        }
 
 
 }

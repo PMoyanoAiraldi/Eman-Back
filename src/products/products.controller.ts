@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { ProductsService } from "./products.service";
 import { CreateProductDto } from "./dto/create-products.dto";
@@ -147,6 +147,17 @@ export class ProductsController {
     @ApiSecurity('bearer')
     async publish(@Param('id') id: string): Promise<ResponseProductDto> {
         return this.productsService.publish(id);
+    }
+
+    @Delete(':id')
+    @ApiOperation({ summary: 'Eliminar un producto en borrador - Solo Admin' })
+    @ApiResponse({ status: 200, description: 'Borrador eliminado' })
+    @ApiResponse({ status: 400, description: 'Solo se pueden eliminar borradores' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
+    @ApiSecurity('bearer')
+    async remove(@Param('id') id: string) {
+        return this.productsService.deleteDraft(id);
     }
 
 
