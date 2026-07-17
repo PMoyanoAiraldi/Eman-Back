@@ -37,6 +37,9 @@ export class MediaContent {
     @Column({ nullable: true, length: 255 })
     ctaUrl: string;           // "/mujer"
 
+    @Column({ type: 'varchar', default: 'center center' })
+    focalPoint: string; // ej: "center 20%", "50% 30%"
+
     @Column({ type: 'enum', enum: MediaType })
     type: MediaType;
 
