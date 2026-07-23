@@ -29,14 +29,17 @@ export class CreateOrderDto {
     @IsString()
     guestPhone: string;
 
+    @IsOptional()
     @IsString()
-    address: string;
+    address?: string;
 
+    @IsOptional()
     @IsString()
-    city: string;
+    city?: string;
 
+    @IsOptional()
     @IsString()
-    zipCode: string;
+    zipCode?: string;
 
     @IsEnum(shippingTypeEnum)
     shippingType: shippingTypeEnum;

@@ -6,6 +6,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, Pri
 export enum shippingTypeEnum {
     COORDINADO = 'coordinado',
     CORREO_ARGENTINO = 'correo_argentino',
+    RETIRO_EN_LOCAL = 'retiro_en_local'
 }
 
 export enum stateEnum{
@@ -43,7 +44,7 @@ export class Order {
     @Column({length: 255, default: 'Argentina'})
     country: string;
 
-    @Column({ length: 10 })
+    @Column({ length: 10, nullable: true })
     zipCode: string;
 
     @Column({
@@ -74,7 +75,7 @@ export class Order {
 
     @ManyToOne(() => Users, (user) => user.orders, { nullable: true }) //para poder comprar sin registro del user
     @JoinColumn({ name: 'userId' })
-    user: Users;
+    user: Users | null;
 
     @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.orders)
     orderDetail: OrderDetail[];

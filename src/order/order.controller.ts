@@ -1,12 +1,17 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guards/roles.guard";
 import { Roles } from "src/auth/decorators/roles.decorator";
-import { rolEnum } from "src/users/users.entity";
+import { rolEnum, Users } from "src/users/users.entity";
 import { stateEnum } from "./order.entity";
+import { OptionalJwtAuthGuard } from "src/auth/guards/optional-jwt-auth.guard";
+
+interface RequestWithUser extends Request {
+    user?: Users;
+}
 
 @ApiTags('Order')
 @Controller("order")
@@ -53,8 +58,11 @@ export class OrderController {
             }
         }
     })
-    create(@Body() createOrderDto: CreateOrderDto) {
-        return this.orderService.createOrder(createOrderDto)
+    @UseGuards(OptionalJwtAuthGuard) // guard custom que no rompe si no hay token
+    create(@Body() createOrderDto: CreateOrderDto, @Req() req: RequestWithUser) {
+        console.log('req.user:', req.user);
+        const userId = req.user?.id ?? null;
+        return this.orderService.createOrder(createOrderDto, userId)
     }
 
     @Get()

@@ -20,7 +20,7 @@ export class OrderService {
         private emailService: EmailService
     ) { }
 
-    async createOrder(createOrderDto: CreateOrderDto): Promise<Order> {
+    async createOrder(createOrderDto: CreateOrderDto, userId: string | null): Promise<Order> {
         return await this.dataSource.transaction(async (manager) => { // <- transaction: grupo de operaciones de base de datos que se ejecutan todas juntas o ninguna 
 
         // 1. Crear la orden base
@@ -35,6 +35,7 @@ export class OrderService {
             shippingCost:   createOrderDto.shippingCost ?? 0,
             // discountAmount: createOrderDto.discountAmount ?? 0, <- se implementa con cupones
             total:          0,
+            user:           userId ? { id: userId } : null,
         })
         
         const savedOrder = await manager.save(Order, order)
