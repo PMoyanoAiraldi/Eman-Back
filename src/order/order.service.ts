@@ -115,6 +115,22 @@ export class OrderService {
         })
     }
 
+    async getOrdersByUser(userId: string): Promise<Order[]> {
+        return this.orderRepository.find({
+            where: { user: { id: userId } },
+            relations: [
+                'orderDetail',
+                'orderDetail.product',
+                'orderDetail.product.images',
+                'orderDetail.variant',
+                'orderDetail.variant.size',
+                'orderDetail.variant.color',
+                'payments',
+            ],
+            order: { createdAt: 'DESC' },
+        })
+    }
+
     async updateState(id: string, state: stateEnum): Promise<Order> {
         const order = await this.getOrderById(id)
         order.state = state 

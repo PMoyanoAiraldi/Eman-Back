@@ -171,7 +171,7 @@ export class PaymentsService {
                 state: stateEnum.PENDIENTE,
                 createdAt: LessThan(limite),
             },
-            relations: ['orderDetail'], // necesitamos los detalles para saber qué stock devolver
+            relations: ['orderDetail', 'orderDetail.variant'], // necesitamos los detalles para saber qué stock devolver
         });
 
         for (const order of orderExpired) {

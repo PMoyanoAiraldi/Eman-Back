@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
@@ -73,6 +73,17 @@ export class OrderController {
     @ApiSecurity('bearer')
     findAll() {
         return this.orderService.getAllOrders()
+    }
+
+    @Get('user/:userId')
+    @ApiOperation({ summary: 'Obtener las órdenes de un usuario logueado' })
+    @UseGuards(JwtAuthGuard)
+    @ApiSecurity('bearer')
+    getOrdersByUser(@Param('userId') userId: string, @Req() req: RequestWithUser) {
+        if (req.user?.id !== userId) {
+            throw new ForbiddenException('No podés ver las compras de otro usuario');
+        }
+        return this.orderService.getOrdersByUser(userId);
     }
 
     @Get(':id')
