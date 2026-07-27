@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Order, shippingTypeEnum, stateEnum } from "./order.entity";
 import { DataSource, Repository } from "typeorm";
@@ -147,10 +147,11 @@ export class OrderService {
         return updatedOrder
     }
 
-    async getOrderSummary(id: string) {
+    async getOrderSummary(id: string, requesterId?: string) {
         const order = await this.orderRepository.findOne({
             where: { id },
             relations: [
+                'user', // para poder validar dueño sin query extra
                 'orderDetail',
                 'orderDetail.product',
                 'orderDetail.product.images', 
@@ -161,6 +162,14 @@ export class OrderService {
             ],
         })
         if (!order) throw new NotFoundException(`Orden con ID ${id} no encontrada`)
+
+        // Si se pasa requesterId, es una consulta protegida (usuario logueado
+        // pidiendo ver una orden propia) — validamos que coincida.
+        // Si no se pasa, es el flujo público de guest checkout, sin chequeo.
+        if (requesterId !== undefined && order.user?.id !== requesterId) {
+            throw new ForbiddenException('No podés ver el detalle de esta orden')
+        }
+
 
         // Tomamos el pago más reciente (por si hubo reintentos)
         const lastPayment = order.payments?.length

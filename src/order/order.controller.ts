@@ -125,6 +125,17 @@ export class OrderController {
         return this.orderService.updateState(id, state)
     }
 
+    @Get('mine/:id/summary')
+    @ApiOperation({ summary: 'Resumen de una orden propia - Requiere login' })
+    @ApiResponse({ status: 200, description: 'Resumen de la orden' })
+    @ApiResponse({ status: 403, description: 'La orden no pertenece al usuario logueado' })
+    @ApiResponse({ status: 404, description: 'Orden no encontrada' })
+    @UseGuards(JwtAuthGuard)
+    @ApiSecurity('bearer')
+    getMyOrderSummary(@Param('id') id: string, @Req() req: RequestWithUser) {
+        return this.orderService.getOrderSummary(id, req.user?.id)
+    }
+
     @Get(':id/summary')
     @ApiOperation({ summary: 'Resumen de una orden - Público (para pantalla de confirmación)' })
     @ApiResponse({ status: 200, description: 'Resumen de la orden' })
@@ -132,5 +143,8 @@ export class OrderController {
     findSummary(@Param('id') id: string) {
     return this.orderService.getOrderSummary(id)
     }
+
+
+
 
 }
