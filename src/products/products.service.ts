@@ -22,7 +22,8 @@ export class ProductsService {
         @InjectRepository(SubCategories)
         private readonly subCategoriesRepository: Repository<SubCategories>,
         @InjectRepository(ProductTypes)
-        private readonly productTypesRepository: Repository<ProductTypes>
+        private readonly productTypesRepository: Repository<ProductTypes>,
+        
     ) {}
 
     async createProduct(createProductDto: CreateProductDto): Promise<Products> {
@@ -242,7 +243,6 @@ export class ProductsService {
             }
             await this.productRepository.remove(product);
             return { message: 'Borrador eliminado correctamente' };
-        }
-
+        };
 
 }

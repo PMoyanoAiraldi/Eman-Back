@@ -18,7 +18,7 @@ export class Images {
     @Column({ default: true })
     state: boolean;
 
-    @ManyToOne(() => Products, (product) => product.images)
+    @ManyToOne(() => Products, (product) => product.images, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'productId' })
     product: Products;
 }
