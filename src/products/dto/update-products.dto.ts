@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateIf } from 'class-validator';
 
 export class UpdateProductDto {
     @IsOptional()
@@ -22,9 +22,11 @@ export class UpdateProductDto {
     @IsBoolean()
     isFeatured?: boolean;
 
+    // Opcional en el negocio: puede no tener marca
     @IsOptional()
+    @ValidateIf((o: UpdateProductDto) => o.brandId !== null)
     @IsUUID()
-    brandId?: string;
+    brandId?: string | null;
 
     @IsOptional()
     @IsUUID()
@@ -34,7 +36,10 @@ export class UpdateProductDto {
     @IsUUID()
     subcategoryId?: string;
 
+    // Opcional en el negocio: puede no tener tipo
     @IsOptional()
+    @ValidateIf((o: UpdateProductDto) => o.productTypeId !== null)
     @IsUUID()
-    productTypeId?: string;
+    productTypeId?: string | null;
+
 }
