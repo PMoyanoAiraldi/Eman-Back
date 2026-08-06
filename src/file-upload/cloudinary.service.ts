@@ -78,7 +78,7 @@ export class CloudinaryService {
         const publicId = this.extractPublicId(imageUrl);
         try {
             const result = (await cloudinary.uploader.destroy(publicId)as CloudinaryDestroyResult);
-            if (result.result === 'ok') {
+            if (result.result === 'ok' || result.result === 'not found') {
                 console.log(`Archivo con public_id ${publicId} eliminado exitosamente.`);
             } else {
                 throw new Error(`Error al eliminar el archivo con public_id ${publicId}`);
