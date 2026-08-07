@@ -129,6 +129,41 @@ export class UsersController {
         return this.usersService.changePassword(userId, oldPassword, newPassword);
     }
 
+    @Patch('forgot-password')
+    @ApiOperation({ summary: 'Solicitar reset de contraseña por email' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            required: ['email'],
+            properties: { email: { type: 'string' } }
+        }
+    })
+    async forgotPassword(@Body('email') email: string) {
+        await this.usersService.requestPasswordReset(email);
+        // Siempre la misma respuesta, exista o no el email
+        return { message: 'Si el email existe, vas a recibir un correo con instrucciones' };
+    }
+
+    @Patch('reset-password')
+    @ApiOperation({ summary: 'Resetear contraseña con token recibido por email' })
+    @ApiResponse({ status: 400, description: 'Token inválido o expirado' })
+    @ApiBody({
+        schema: {
+            type: 'object',
+            required: ['token', 'newPassword'],
+            properties: {
+                token: { type: 'string' },
+                newPassword: { type: 'string' },
+            }
+        }
+    })
+    async resetPassword(
+        @Body('token') token: string,
+        @Body('newPassword') newPassword: string,
+    ) {
+        return this.usersService.resetPassword(token, newPassword);
+    }
+
 
     
 }

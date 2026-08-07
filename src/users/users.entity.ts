@@ -49,6 +49,12 @@ export class Users {
     @Column({ type: 'timestamp', nullable: true, default: null })
     refreshTokenExpiry: Date | null;
 
+    @Column({ type: 'varchar', nullable: true })
+    resetPasswordTokenHash: string | null;
+
+    @Column({ type: 'timestamp', nullable: true })
+    resetPasswordExpiresAt: Date | null;
+
     @OneToMany(() => Order, (order) => order.user)
     orders: Order[];
 }

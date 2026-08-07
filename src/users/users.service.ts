@@ -4,12 +4,15 @@ import { Users } from "./users.entity";
 import { Repository } from "typeorm";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { EmailService } from "src/email/email.service";
 
 @Injectable()
 export class UsersService {
     constructor(
     @InjectRepository(Users)
         private readonly usersRepository: Repository<Users>,
+        private readonly emailService: EmailService
     ) { }
 
     async findAll(page: number, limit: number, state?: string, rol?: string, search?: string): Promise<
@@ -112,4 +115,42 @@ export class UsersService {
 
         return { message: 'Contraseña actualizada correctamente' };
     }
+
+
+    async requestPasswordReset(email: string): Promise<void> {
+        const user = await this.usersRepository.findOne({ where: { email } });
+        if (!user) return; // no revelamos si existe o no
+
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+        user.resetPasswordTokenHash = tokenHash;
+        user.resetPasswordExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+        await this.usersRepository.save(user);
+
+        const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+        await this.emailService.sendPasswordResetEmail(user.email, resetUrl); // Resend, como en las confirmaciones de orden
+    }
+
+    async resetPassword(rawToken: string, newPassword: string): Promise<{ message: string }> {
+        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+        const user = await this.usersRepository.findOne({
+            where: { resetPasswordTokenHash: tokenHash },
+        });
+
+        if (!user || !user.resetPasswordExpiresAt || user.resetPasswordExpiresAt < new Date()) {
+            throw new BadRequestException('El link expiró o no es válido, pedí uno nuevo');
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.resetPasswordTokenHash = null;
+        user.resetPasswordExpiresAt = null;
+        await this.usersRepository.save(user);
+
+        return { message: 'Contraseña actualizada correctamente' };
+    }
+
+    
 }

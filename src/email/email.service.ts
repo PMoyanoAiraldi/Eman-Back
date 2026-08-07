@@ -79,4 +79,36 @@ async sendDispatchNotification(order: Order) {
         this.logger.error(`Error enviando email de despacho para orden ${order.id}`, error);
     }
 }
+
+async sendPasswordResetEmail(email: string, resetUrl: string) {
+    console.log('📧 Intentando enviar mail de reset a:', email)
+    try {
+        const response = await this.resend.emails.send({
+            from: 'Eman <onboarding@resend.dev>',
+            to: email,
+            subject: 'Recuperá tu contraseña',
+            html: `
+                <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+                    <h2 style="color: #C9A84C;">Recuperá tu contraseña</h2>
+                    <p>Recibimos una solicitud para restablecer tu contraseña. Si fuiste vos, hacé clic en el siguiente botón:</p>
+                    <p style="text-align: center; margin: 24px 0;">
+                        <a href="${resetUrl}" style="background: #C9A84C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                            Restablecer contraseña
+                        </a>
+                    </p>
+                    <p>Este link vence en 30 minutos. Si no solicitaste este cambio, podés ignorar este correo.</p>
+                </div>
+            `,
+        });
+
+        if (response.error) {
+            this.logger.error(`Resend rechazó el envío de reset para ${email}: ${JSON.stringify(response.error)}`);
+            return;
+        }
+
+        this.logger.log(`Email de reset de contraseña enviado a ${email}`);
+    } catch (error) {
+        this.logger.error(`Error enviando email de reset a ${email}`, error);
+    }
+}
 }
