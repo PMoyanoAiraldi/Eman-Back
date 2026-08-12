@@ -23,7 +23,36 @@ export class OrderService {
     async createOrder(createOrderDto: CreateOrderDto, userId: string | null): Promise<Order> {
         return await this.dataSource.transaction(async (manager) => { // <- transaction: grupo de operaciones de base de datos que se ejecutan todas juntas o ninguna 
 
-        // 1. Crear la orden base
+        // 1. Validar variantes, stock, y calcular subtotal ANTES de crear la orden
+        let subtotal = 0
+        const variantsToUpdate: { variant: ProductVariants; newStock: number }[] = []
+
+        for (const item of createOrderDto.items) {
+            const variant = await manager.findOne(ProductVariants, {
+                where: { id: item.variantId }
+            })
+            if (!variant) {
+                throw new NotFoundException(`Variante ${item.variantId} no encontrada`)
+            }
+            if (variant.stock < item.quantity) {
+                throw new BadRequestException(
+                    `Stock insuficiente para "${item.productName}". Stock disponible: ${variant.stock}`
+                )
+            }
+            variantsToUpdate.push({ variant, newStock: variant.stock - item.quantity })
+            subtotal += item.unitPrice * item.quantity
+        }
+
+        // 2. Calcular shippingCost en el backend
+        const FREE_SHIPPING_THRESHOLD = 150000
+        const isRegisteredUser = userId !== null
+        const qualifiesForFreeShipping = isRegisteredUser && subtotal >= FREE_SHIPPING_THRESHOLD
+
+        const shippingCost    = qualifiesForFreeShipping
+            ? 0
+            : (createOrderDto.shippingCost ?? 0)
+
+          // 3. Crear la orden base
         const order = manager.create(Order, {  // manager: es como un repository temporal que agrupa todo
             guestName:      createOrderDto.guestName,
             guestEmail:     createOrderDto.guestEmail,
@@ -32,36 +61,24 @@ export class OrderService {
             city:           createOrderDto.city,
             zipCode:        createOrderDto.zipCode,
             shippingType:   createOrderDto.shippingType,
-            shippingCost:   createOrderDto.shippingCost ?? 0,
+            shippingCost,
             // discountAmount: createOrderDto.discountAmount ?? 0, <- se implementa con cupones
             total:          0,
             user:           userId ? { id: userId } : null,
         })
+
+        // const discountAmount  = createOrderDto.discountAmount ?? 0
+        //savedOrder.total      = subtotal + shippingCost 
+        // - discountAmount  → se implementa con cupones
         
         const savedOrder = await manager.save(Order, order)
 
-        // 2. Procesar cada item del carrito
-        let subtotal = 0
-
-        for (const item of createOrderDto.items) {
-
-        // Verificar que la variante existe
-        const variant = await manager.findOne(ProductVariants, {
-            where: { id: item.variantId }
-        })
-        if (!variant) {
-            throw new NotFoundException(`Variante ${item.variantId} no encontrada`)
-        }
-
-        // Verificar stock suficiente
-        if (variant.stock < item.quantity) {
-            throw new BadRequestException(
-                `Stock insuficiente para "${item.productName}". Stock disponible: ${variant.stock}`
-            )
-        }
-
-        // Descontar stock
-        variant.stock -= item.quantity
+       // 4. Descontar stock y crear OrderDetail
+        for (let i = 0; i < createOrderDto.items.length; i++) {
+            const item = createOrderDto.items[i]
+            const { variant, newStock } = variantsToUpdate[i]
+            
+        variant.stock = newStock
         await manager.save(ProductVariants, variant)
 
         // Crear el detalle de la orden
@@ -75,14 +92,10 @@ export class OrderService {
         })
         await manager.save(OrderDetail, detail)
 
-        subtotal += item.unitPrice * item.quantity
         }
 
-        // 3. Calcular total final
-        const shippingCost    = createOrderDto.shippingCost ?? 0
-        // const discountAmount  = createOrderDto.discountAmount ?? 0
-        savedOrder.total      = subtotal + shippingCost 
-        // - discountAmount  → se implementa con cupones
+       // 5. Total final
+        savedOrder.total = subtotal + shippingCost
         await manager.save(Order, savedOrder)
 
         return savedOrder
