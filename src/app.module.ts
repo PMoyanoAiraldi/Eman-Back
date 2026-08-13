@@ -26,6 +26,7 @@ import { ColorsModule } from './colors/colors.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EmailModule } from './email/email.module';
 import { SiteSettingsModule } from './site-settings/site-settings.module';
+import { CorreoArgentinoModule } from './correo-argentino/correo-argentino.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { SiteSettingsModule } from './site-settings/site-settings.module';
     ColorsModule,
     EmailModule,
     SiteSettingsModule,
+    CorreoArgentinoModule,
     ScheduleModule.forRoot()
 
   ],
