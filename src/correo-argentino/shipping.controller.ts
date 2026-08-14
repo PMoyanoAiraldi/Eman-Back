@@ -15,14 +15,21 @@ export class ShippingController {
 
     @Post('quote')
     async quote(@Body() body: QuoteRequestDto): Promise<RateItem[]> {
-        return this.correoArgentino.getRates({
+        const rates = await this.correoArgentino.getRates({
         postalCodeOrigin: '2255', 
         postalCodeDestination: body.postalCodeDestination,
         weight: body.weight,
         height: body.height,
         width: body.width,
         length: body.length,
-        deliveredType: 'D',
+        deliveredType: 'D', //D = domicilio
         });
+
+        // De las opciones a domicilio, devolvemos la más económica
+        const cheapest = rates
+            .filter(r => r.deliveredType === 'D')
+            .sort((a, b) => a.price - b.price)[0];
+
+        return cheapest ? [cheapest] : [];
     }
 }
