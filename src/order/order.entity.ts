@@ -73,6 +73,18 @@ export class Order {
     @Column('decimal', { precision: 10, scale: 2, nullable: true })
     shippingCost?: number;
 
+    @Column({ type: 'int', nullable: true })
+    packageWeight?: number; // gramos
+
+    @Column({ type: 'int', nullable: true })
+    packageHeight?: number;
+
+    @Column({ type: 'int', nullable: true })
+    packageWidth?: number;
+
+    @Column({ type: 'int', nullable: true })
+    packageLength?: number;
+
     @ManyToOne(() => Users, (user) => user.orders, { nullable: true }) //para poder comprar sin registro del user
     @JoinColumn({ name: 'userId' })
     user: Users | null;

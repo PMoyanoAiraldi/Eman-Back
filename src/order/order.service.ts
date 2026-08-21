@@ -6,6 +6,7 @@ import { OrderDetail } from "src/orderDetail/orderDetail.entity";
 import { ProductVariants } from "src/productVariants/productVariants.entity";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { EmailService } from "src/email/email.service";
+import { ShippingService } from "src/shipping/shipping.service";
 
 @Injectable()
 export class OrderService {
@@ -17,7 +18,8 @@ export class OrderService {
         @InjectRepository(ProductVariants)
         private variantRepository: Repository<ProductVariants>,
         private dataSource: DataSource,
-        private emailService: EmailService
+        private emailService: EmailService,
+        private readonly shippingService: ShippingService
     ) { }
 
     async createOrder(createOrderDto: CreateOrderDto, userId: string | null): Promise<Order> {
@@ -52,6 +54,26 @@ export class OrderService {
             ? 0
             : (createOrderDto.shippingCost ?? 0)
 
+        // 2.5. Calcular peso y dimensiones del paquete (solo aplica a Correo Argentino)
+        // Nota: se calcula aunque el envío haya salido gratis por superar el umbral —
+        // el paquete pesa lo mismo, lo que cambia es el costo, no el bulto físico.
+        let packageData: Partial<Order> = {}
+
+        if (createOrderDto.shippingType === shippingTypeEnum.CORREO_ARGENTINO) {
+            const pkg = await this.shippingService.calculatePackage(
+                createOrderDto.items.map(item => ({
+                    productId: item.productId,
+                    quantity:  item.quantity,
+                }))
+            )
+            packageData = {
+                packageWeight: pkg.weight,
+                packageHeight: pkg.height,
+                packageWidth:  pkg.width,
+                packageLength: pkg.length,
+            }
+        }
+
           // 3. Crear la orden base
         const order = manager.create(Order, {  // manager: es como un repository temporal que agrupa todo
             guestName:      createOrderDto.guestName,
@@ -63,6 +85,7 @@ export class OrderService {
             shippingType:   createOrderDto.shippingType,
             shippingCost,
             // discountAmount: createOrderDto.discountAmount ?? 0, <- se implementa con cupones
+            ...packageData,
             total:          0,
             user:           userId ? { id: userId } : null,
         })

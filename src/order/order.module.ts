@@ -6,10 +6,12 @@ import { OrderController } from "./order.controller";
 import { OrderDetail } from "src/orderDetail/orderDetail.entity";
 import { ProductVariants } from "src/productVariants/productVariants.entity";
 import { EmailModule } from "src/email/email.module";
+import { ShippingService } from "src/shipping/shipping.service";
+import { Products } from "src/products/products.entity";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Order, OrderDetail, ProductVariants]), EmailModule],
-    providers: [ OrderService],
+    imports: [TypeOrmModule.forFeature([Order, OrderDetail, ProductVariants, Products]), EmailModule],
+    providers: [ OrderService, ShippingService],
     controllers: [OrderController],
     exports: [OrderService]
 })
