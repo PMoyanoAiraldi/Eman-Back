@@ -86,9 +86,12 @@ export class UsersController {
             type: 'object',
             properties: {
                 name: { type: 'string' },
-                address: { type: 'string' },
+                streetName: { type: 'string' },
+                streetNumber: { type: 'string' },
+                floor: { type: 'string' },
+                apartment: { type: 'string' },
                 city: { type: 'string' },
-                province: { type: 'string'},
+                provinceCode: { type: 'string'},
                 phone: { type: 'string' },
             }
         }

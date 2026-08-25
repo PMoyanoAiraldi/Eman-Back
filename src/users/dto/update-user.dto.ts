@@ -11,7 +11,22 @@ export class UpdateUserDto {
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()
-    address?: string;
+    streetName?: string;
+    
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    streetNumber?: string;
+    
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    floor?: string;
+    
+    @ApiPropertyOptional()
+    @IsString()
+    @IsOptional()
+    apartment?: string;
 
     @ApiPropertyOptional()
     @IsString()
@@ -22,7 +37,7 @@ export class UpdateUserDto {
     @ApiPropertyOptional()
     @IsString()
     @IsOptional()
-    province?: string;
+    provinceCode?: string;
 
     @ApiPropertyOptional()
     @IsString()

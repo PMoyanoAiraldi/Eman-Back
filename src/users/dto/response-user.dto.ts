@@ -12,13 +12,22 @@ export class UserResponseDto {
     email: string;
 
     @ApiProperty()
-    address: string;
+    streetName?: string;
+
+    @ApiProperty()
+    streetNumber?: string;
+
+    @ApiProperty()
+    floor?:string;
+
+    @ApiProperty()
+    apartment?:string;
 
     @ApiProperty()
     city: string;
 
     @ApiProperty()
-    province: string;
+    provinceCode: string;
 
     @ApiProperty()
     phone: string;

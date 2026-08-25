@@ -35,11 +35,24 @@ export class Order {
     @Column('decimal', { precision: 10, scale: 2 })
     total: number;
 
-    @Column({ length: 255, nullable: false})
-    address: string;
+    @Column({ length: 255, nullable: true })
+    streetName?: string;
+
+    @Column({ length: 10, nullable: true })
+    streetNumber?: string;
+
+    @Column({ length: 10, nullable: true })
+    floor?: string;
+
+    @Column({ length: 10, nullable: true })
+    apartment?: string;
+    
 
     @Column({ length: 255, nullable: false})
     city: string;
+
+    @Column({ length: 1, nullable: true })
+    provinceCode?: string; // solo aplica a correo_argentino, coordinado no lo necesita
 
     @Column({length: 255, default: 'Argentina'})
     country: string;

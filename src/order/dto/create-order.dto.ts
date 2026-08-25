@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator';
 import { shippingTypeEnum } from '../order.entity';
 
 class OrderItemDto {
@@ -29,17 +29,36 @@ export class CreateOrderDto {
     @IsString()
     guestPhone: string;
 
+    // Requeridos para correo_argentino y coordinado, no para retiro_en_local
+    @ValidateIf((o: CreateOrderDto) => o.shippingType !== shippingTypeEnum.RETIRO_EN_LOCAL)
+    @IsString()
+    streetName: string;
+
+    @ValidateIf((o: CreateOrderDto) => o.shippingType !== shippingTypeEnum.RETIRO_EN_LOCAL)
+    @IsString()
+    streetNumber: string;
+
+    @ValidateIf((o: CreateOrderDto) => o.shippingType !== shippingTypeEnum.RETIRO_EN_LOCAL)
+    @IsString()
+    city: string;
+
+    // Opcionales siempre
     @IsOptional()
     @IsString()
-    address?: string;
+    floor?: string;
 
     @IsOptional()
     @IsString()
-    city?: string;
+    apartment?: string;
 
-    @IsOptional()
+    // Solo correo_argentino los necesita
+    @ValidateIf((o: CreateOrderDto) => o.shippingType === shippingTypeEnum.CORREO_ARGENTINO)
     @IsString()
-    zipCode?: string;
+    provinceCode: string;
+
+    @ValidateIf((o: CreateOrderDto) => o.shippingType === shippingTypeEnum.CORREO_ARGENTINO)
+    @IsString()
+    zipCode: string;
 
     @IsEnum(shippingTypeEnum)
     shippingType: shippingTypeEnum;

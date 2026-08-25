@@ -31,8 +31,10 @@ export class UsersService {
                 'user.id',
                 'user.name',
                 'user.email',
-                'user.address',
+                'user.streetName',
+                'user.streetNumber',
                 'user.city',
+                'user.provinceCode',
                 'user.phone',
                 'user.state',
                 'user.rol',
@@ -74,8 +76,12 @@ export class UsersService {
     const userWithoutSensitiveData = {
             name: user.name,
             email: user.email,
-            address: user.address,
+            streetName: user.streetName,
+            streetNumber: user.streetNumber,
+            floor: user.floor,
+            apartment: user.apartment,
             city: user.city,
+            provinceCode: user.provinceCode,
             phone: user.phone,
         };
 

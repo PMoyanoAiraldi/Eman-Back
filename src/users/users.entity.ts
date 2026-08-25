@@ -16,13 +16,22 @@ export class Users {
     name: string;
 
     @Column({ length: 255, nullable: false})
-    address: string;
+    city: string;
 
-    @Column({ length: 255, nullable: false})
-    city: string
+    @Column({ length: 255, nullable: false })
+    streetName?: string;
 
-    @Column({ length: 255, nullable: false})
-    province: string;
+    @Column({ length: 10, nullable: false })
+    streetNumber?: string;
+
+    @Column({ length: 10, nullable: true })
+    floor?: string;
+
+    @Column({ length: 10, nullable: true })
+    apartment?: string;
+
+    @Column({ length: 1, nullable: false })
+    provinceCode?: string;     
 
     @Column({ length: 20, nullable: false})
     phone: string;
