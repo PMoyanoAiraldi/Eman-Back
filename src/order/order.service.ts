@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Order, shippingTypeEnum, stateEnum } from "./order.entity";
+import { DeliveryType, Order, shippingTypeEnum, stateEnum } from "./order.entity";
 import { DataSource, Repository } from "typeorm";
 import { OrderDetail } from "src/orderDetail/orderDetail.entity";
 import { ProductVariants } from "src/productVariants/productVariants.entity";
@@ -75,18 +75,29 @@ export class OrderService {
         }
 
           // 3. Crear la orden base
+        const isSucursal = createOrderDto.shippingType === shippingTypeEnum.CORREO_ARGENTINO
+            && createOrderDto.deliveryType === DeliveryType.SUCURSAL;
+
         const order = manager.create(Order, {  // manager: es como un repository temporal que agrupa todo
             guestName:      createOrderDto.guestName,
             guestEmail:     createOrderDto.guestEmail,
             guestPhone:     createOrderDto.guestPhone,
-            streetName:     createOrderDto.streetName,
-            streetNumber:   createOrderDto.streetNumber,
-            floor:          createOrderDto.floor,
-            apartment:      createOrderDto.apartment,
-            provinceCode:   createOrderDto.provinceCode,
-            city:           createOrderDto.city,
-            zipCode:        createOrderDto.zipCode,
             shippingType:   createOrderDto.shippingType,
+            deliveryType:   createOrderDto.deliveryType ?? null,
+
+            streetName:     isSucursal ? null : createOrderDto.streetName,
+            streetNumber:   isSucursal ? null : createOrderDto.streetNumber,
+            floor:          isSucursal ? null :createOrderDto.floor,
+            apartment:      isSucursal ? null : createOrderDto.apartment,
+            city:           isSucursal ? createOrderDto.agencyCity : createOrderDto.city,
+
+            provinceCode:   createOrderDto.provinceCode,
+            zipCode:        createOrderDto.zipCode,
+
+            agencyCode:     isSucursal ? createOrderDto.agencyCode : null,
+            agencyName:     isSucursal ? createOrderDto.agencyName : null,
+            agencyAddress:  isSucursal ? createOrderDto.agencyAddress : null,
+            
             shippingCost,
             // discountAmount: createOrderDto.discountAmount ?? 0, <- se implementa con cupones
             ...packageData,

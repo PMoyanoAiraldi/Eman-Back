@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsArray, IsEnum, IsNumber, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator';
-import { shippingTypeEnum } from '../order.entity';
+import { DeliveryType, shippingTypeEnum } from '../order.entity';
 
 class OrderItemDto {
     @IsString()
@@ -29,16 +29,30 @@ export class CreateOrderDto {
     @IsString()
     guestPhone: string;
 
-    // Requeridos para correo_argentino y coordinado, no para retiro_en_local
-    @ValidateIf((o: CreateOrderDto) => o.shippingType !== shippingTypeEnum.RETIRO_EN_LOCAL)
+    // Solo aplica/es obligatorio cuando shippingType es CORREO_ARGENTINO
+    @ValidateIf((o: CreateOrderDto) => o.shippingType === shippingTypeEnum.CORREO_ARGENTINO)
+    @IsEnum(DeliveryType)
+    deliveryType?: DeliveryType;
+
+    // Dirección: obligatoria si NO es retiro en local Y (no es correo_argentino, O es correo_argentino a domicilio)
+    @ValidateIf((o: CreateOrderDto) =>
+        o.shippingType !== shippingTypeEnum.RETIRO_EN_LOCAL &&
+        (o.shippingType !== shippingTypeEnum.CORREO_ARGENTINO || o.deliveryType === DeliveryType.DOMICILIO)
+    )
     @IsString()
     streetName: string;
 
-    @ValidateIf((o: CreateOrderDto) => o.shippingType !== shippingTypeEnum.RETIRO_EN_LOCAL)
+    @ValidateIf((o: CreateOrderDto) =>
+        o.shippingType !== shippingTypeEnum.RETIRO_EN_LOCAL &&
+        (o.shippingType !== shippingTypeEnum.CORREO_ARGENTINO || o.deliveryType === DeliveryType.DOMICILIO)
+    )
     @IsString()
     streetNumber: string;
 
-    @ValidateIf((o: CreateOrderDto) => o.shippingType !== shippingTypeEnum.RETIRO_EN_LOCAL)
+    @ValidateIf((o: CreateOrderDto) =>
+        o.shippingType !== shippingTypeEnum.RETIRO_EN_LOCAL &&
+        (o.shippingType !== shippingTypeEnum.CORREO_ARGENTINO || o.deliveryType === DeliveryType.DOMICILIO)
+    )
     @IsString()
     city: string;
 
@@ -51,7 +65,8 @@ export class CreateOrderDto {
     @IsString()
     apartment?: string;
 
-    // Solo correo_argentino los necesita
+    // provinceCode y zipCode: siempre necesarios en correo_argentino (domicilio o sucursal),
+    // porque se usan para cotizar y para elegir sucursales de esa provincia
     @ValidateIf((o: CreateOrderDto) => o.shippingType === shippingTypeEnum.CORREO_ARGENTINO)
     @IsString()
     provinceCode: string;
@@ -59,6 +74,33 @@ export class CreateOrderDto {
     @ValidateIf((o: CreateOrderDto) => o.shippingType === shippingTypeEnum.CORREO_ARGENTINO)
     @IsString()
     zipCode: string;
+
+    // Sucursal: obligatoria solo si correo_argentino + sucursal
+    @ValidateIf((o: CreateOrderDto) =>
+        o.shippingType === shippingTypeEnum.CORREO_ARGENTINO && o.deliveryType === DeliveryType.SUCURSAL
+    )
+    @IsString()
+    agencyCode?: string;
+
+    @ValidateIf((o: CreateOrderDto) =>
+        o.shippingType === shippingTypeEnum.CORREO_ARGENTINO && o.deliveryType === DeliveryType.SUCURSAL
+    )
+    @IsOptional()
+    @IsString()
+    agencyName?: string;
+
+    @ValidateIf((o: CreateOrderDto) =>
+        o.shippingType === shippingTypeEnum.CORREO_ARGENTINO && o.deliveryType === DeliveryType.SUCURSAL
+    )
+    @IsOptional()
+    @IsString()
+    agencyAddress?: string;
+
+    @ValidateIf((o: CreateOrderDto) =>
+    o.shippingType === shippingTypeEnum.CORREO_ARGENTINO && o.deliveryType === DeliveryType.SUCURSAL
+    )
+    @IsString()
+    agencyCity?: string;
 
     @IsEnum(shippingTypeEnum)
     shippingType: shippingTypeEnum;
@@ -71,4 +113,6 @@ export class CreateOrderDto {
     @ValidateNested({ each: true })
     @Type(() => OrderItemDto)
     items: OrderItemDto[];
+
+    
 }

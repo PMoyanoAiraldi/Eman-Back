@@ -17,6 +17,11 @@ export enum stateEnum{
     CANCELADO = 'cancelado'
 }
 
+export enum DeliveryType {
+    DOMICILIO = 'domicilio',
+    SUCURSAL = 'sucursal',
+}
+
 
 @Entity({ name: 'order' })
 export class Order {
@@ -35,20 +40,20 @@ export class Order {
     @Column('decimal', { precision: 10, scale: 2 })
     total: number;
 
-    @Column({ length: 255, nullable: true })
-    streetName?: string;
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    streetName?: string | null;
 
-    @Column({ length: 10, nullable: true })
-    streetNumber?: string;
+    @Column({ type: 'varchar', length: 10, nullable: true })
+    streetNumber?: string | null;
 
-    @Column({ length: 10, nullable: true })
-    floor?: string;
+    @Column({ type: 'varchar', length: 10, nullable: true })
+    floor?: string | null;
 
-    @Column({ length: 10, nullable: true })
-    apartment?: string;
+    @Column({ type: 'varchar', length: 10, nullable: true })
+    apartment?: string | null;
     
 
-    @Column({ length: 255, nullable: false})
+    @Column({type: 'varchar', length: 255, nullable: false})
     city: string;
 
     @Column({ length: 1, nullable: true })
@@ -59,6 +64,23 @@ export class Order {
 
     @Column({ length: 10, nullable: true })
     zipCode: string;
+
+    @Column({
+    type: 'enum',
+    enum: DeliveryType,
+    nullable: true,
+    })
+    deliveryType: DeliveryType | null;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    agencyCode: string | null; // ej: "B0107" - obligatorio solo si deliveryType = SUCURSAL
+
+    @Column({ type: 'varchar', length: 150, nullable: true })
+    agencyName: string | null; // ej: "Monte Grande" - opcional, para mostrar en el panel sin re-consultar la API
+
+    @Column({ type: 'varchar', length: 300, nullable: true })
+    agencyAddress: string | null; // opcional, idem - útil para mostrar en el admin/email de confirmación sin llamar a /agencies de nuevo
+
 
     @Column({
         type: 'enum',
