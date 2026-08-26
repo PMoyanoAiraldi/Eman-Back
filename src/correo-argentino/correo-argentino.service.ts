@@ -18,7 +18,30 @@ export interface RateItem {
     deliveryTimeMax: string;
     }
 
-    @Injectable()
+export interface Agency {
+    code: string;
+    name: string;
+    services: {
+        packageReception: boolean;
+        pickupAvailability: boolean;
+    };
+    location: {
+        address: {
+            streetName: string;
+            streetNumber: string;
+            city: string;
+            province: string;
+            provinceCode: string;
+            postalCode: string;
+        };
+        latitude: string;
+        longitude: string;
+    };
+    hours: Record<string, { start: string; end: string } | null>;
+    status: string;
+}
+
+@Injectable()
     export class CorreoArgentinoService {
     private cachedToken: string | null = null;
     private tokenExpiresAt: number | null = null; // timestamp en ms
@@ -117,6 +140,7 @@ export interface RateItem {
 
         return response.data.rates;
         } catch (error: unknown) {
+            console.error('Error en getRates:', axios.isAxiosError(error) ? error.response?.data : error);
             const status = axios.isAxiosError(error) ? error.response?.status : undefined;
             if (status === 402) {
                 throw new HttpException(
@@ -130,4 +154,38 @@ export interface RateItem {
             );
         }
     }
+
+
+async getAgencies(provinceCode: string): Promise<Agency[]> {
+    const token = await this.getToken();
+    const customerId = this.config.get<string>('CORREO_AR_CUSTOMER_ID');
+
+    try {
+        const response = await firstValueFrom(
+            this.http.get<Agency[]>(`${this.baseUrl}/agencies`, {
+                headers: { Authorization: `Bearer ${token}` },
+                params: { customerId, provinceCode },
+            }),
+        );
+
+        // Solo mostramos sucursales activas y que reciban paquetes
+        return response.data.filter(
+            a => a.status === 'ACTIVE' && a.services?.packageReception,
+        );
+    } catch (error: unknown) {
+        console.error('Error en getAgencies:', axios.isAxiosError(error) ? error.response?.data : error);
+        const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+        if (status === 402) {
+            throw new HttpException(
+                'Customer ID no válido para Correo Argentino',
+                HttpStatus.UNPROCESSABLE_ENTITY,
+            );
+        }
+        throw new HttpException(
+            'Error al consultar sucursales de Correo Argentino',
+            HttpStatus.BAD_GATEWAY,
+        );
+        }
 }
+    
+    }
