@@ -7,6 +7,7 @@ import { ProductVariants } from "src/productVariants/productVariants.entity";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { EmailService } from "src/email/email.service";
 import { ShippingService } from "src/shipping/shipping.service";
+import { CorreoArgentinoService } from "src/correo-argentino/correo-argentino.service";
 
 @Injectable()
 export class OrderService {
@@ -19,7 +20,8 @@ export class OrderService {
         private variantRepository: Repository<ProductVariants>,
         private dataSource: DataSource,
         private emailService: EmailService,
-        private readonly shippingService: ShippingService
+        private readonly shippingService: ShippingService,
+        private readonly correoArgentinoService: CorreoArgentinoService
     ) { }
 
     async createOrder(createOrderDto: CreateOrderDto, userId: string | null): Promise<Order> {
@@ -270,5 +272,49 @@ export class OrderService {
                 } : null,
         }
     }
+
+    async generateShippingLabel(orderId: string): Promise<Order> {
+    const order = await this.getOrderById(orderId);
+
+    if (order.shippingType !== shippingTypeEnum.CORREO_ARGENTINO) {
+        throw new BadRequestException('Solo los envíos por Correo Argentino requieren etiqueta');
+    }
+    if (order.shippingImportedAt) {
+        throw new BadRequestException('Esta orden ya tiene un envío importado');
+    }
+
+    const isSucursal = order.deliveryType === DeliveryType.SUCURSAL;
+
+    const result = await this.correoArgentinoService.createShipment({
+        extOrderId: order.id,
+        orderNumber: order.id.slice(0, 8),
+        recipient: {
+            name: order.guestName ?? '',
+            phone: order.guestPhone,
+            email: order.guestEmail ?? '',
+        },
+        shipping: {
+            deliveryType: isSucursal ? 'S' : 'D',
+            agency: isSucursal ? (order.agencyCode ?? undefined) : undefined,
+            address: {
+                streetName: order.streetName ?? '',
+                streetNumber: order.streetNumber ?? '',
+                floor: order.floor ?? undefined,
+                apartment: order.apartment ?? undefined,
+                city: isSucursal ? (order.agencyCity ?? order.city) : order.city,
+                provinceCode: order.provinceCode ?? '',
+                postalCode: order.zipCode ?? '',
+            },
+            weight: order.packageWeight ?? 0,
+            declaredValue: Number(order.total),
+            height: order.packageHeight ?? 0,
+            length: order.packageLength ?? 0,
+            width: order.packageWidth ?? 0,
+        },
+    });
+
+    order.shippingImportedAt = new Date(result.createdAt);
+    return this.orderRepository.save(order);
+}
 }
 

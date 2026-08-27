@@ -30,15 +30,24 @@ export class OrderController {
         description: 'Datos para crear la orden',
         schema: {
             type: 'object',
-            required: ['guestName', 'guestEmail', 'guestPhone', 'address', 'city', 'zipCode', 'shippingType', 'items'],
+            required: ['guestName', 'guestEmail', 'guestPhone', 'shippingType', 'items'],
             properties: {
                 guestName:      { type: 'string', example: 'Paula García' },
                 guestEmail:     { type: 'string', example: 'paula@gmail.com' },
                 guestPhone:     { type: 'string', example: '3493123456' },
-                address:        { type: 'string', example: 'San Martín 123' },
+                streetName:     { type: 'string', example: 'Entre Rios' },
+                streetNumber:   { type: 'string', example: '123' },
+                floor:          { type: 'string', example: 'EJ: 2' },
+                apartment:      { type: 'string', example: 'EJ B' },
                 city:           { type: 'string', example: 'Galvez' },
-                zipCode:        { type: 'string', example: '2538' },
+                provinceCode:   { type: 'string', example: 'S' },
+                zipCode:        { type: 'string', example: '2255' },
                 shippingType:   { type: 'string', enum: ['coordinado', 'correo_argentino'] },
+                deliveryType:   { type: 'string', enum: ['domicilio', 'sucursal'], description: 'Solo aplica si shippingType es correo_argentino' },
+                agencyCode:     { type: 'string', example: 'B0107', description: 'Solo si deliveryType es sucursal' },
+                agencyName:     { type: 'string', example: 'Monte Grande' },
+                agencyAddress:  { type: 'string', example: 'Vicente López 448' },
+                agencyCity:     { type: 'string', example: 'Monte Grande' },
                 shippingCost:   { type: 'number', example: 0 },
                // discountAmount: { type: 'number', example: 0 },
                 items: {
@@ -142,6 +151,18 @@ export class OrderController {
     @ApiResponse({ status: 404, description: 'Orden no encontrada' })
     findSummary(@Param('id') id: string) {
     return this.orderService.getOrderSummary(id)
+    }
+
+    @Post(':id/shipping-label')
+    @ApiOperation({ summary: 'Generar etiqueta de envío en MiCorreo - Solo Admin' })
+    @ApiResponse({ status: 200, description: 'Envío importado correctamente a MiCorreo' })
+    @ApiResponse({ status: 400, description: 'La orden no es de Correo Argentino o ya tiene envío importado' })
+    @ApiResponse({ status: 404, description: 'Orden no encontrada' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN)
+    @ApiSecurity('bearer')
+    generateShippingLabel(@Param('id') id: string) {
+        return this.orderService.generateShippingLabel(id);
     }
 
 

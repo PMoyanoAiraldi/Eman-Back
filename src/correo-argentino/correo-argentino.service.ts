@@ -41,6 +41,34 @@ export interface Agency {
     status: string;
 }
 
+export interface CreateShipmentParams {
+    extOrderId: string;
+    orderNumber?: string;
+    recipient: {
+        name: string;
+        phone?: string;
+        email: string;
+    };
+    shipping: {
+        deliveryType: 'D' | 'S';
+        agency?: string; // solo si deliveryType === 'S'
+        address: {
+            streetName: string;
+            streetNumber: string;
+            floor?: string;
+            apartment?: string;
+            city: string;
+            provinceCode: string;
+            postalCode: string;
+        };
+        weight: number;
+        declaredValue: number;
+        height: number;
+        length: number;
+        width: number;
+    };
+}
+
 @Injectable()
     export class CorreoArgentinoService {
     private cachedToken: string | null = null;
@@ -186,6 +214,58 @@ async getAgencies(provinceCode: string): Promise<Agency[]> {
             HttpStatus.BAD_GATEWAY,
         );
         }
+}
+
+async createShipment(params: CreateShipmentParams): Promise<{ createdAt: string }> {
+    const token = await this.getToken();
+    const customerId = this.config.getOrThrow<string>('CORREO_AR_CUSTOMER_ID');
+
+    const sender = {
+        name: this.config.get<string>('CORREO_SENDER_NAME'),
+        phone: this.config.get<string>('CORREO_SENDER_PHONE'),
+        email: this.config.get<string>('CORREO_SENDER_EMAIL'),
+        originAddress: {
+            streetName: this.config.get<string>('CORREO_SENDER_STREET_NAME'),
+            streetNumber: this.config.get<string>('CORREO_SENDER_STREET_NUMBER'),
+            city: this.config.get<string>('CORREO_SENDER_CITY'),
+            provinceCode: this.config.get<string>('CORREO_SENDER_PROVINCE_CODE'),
+            postalCode: this.config.get<string>('CORREO_SENDER_POSTAL_CODE'),
+        },
+    };
+    const body = {
+        customerId,
+        extOrderId: params.extOrderId,
+        orderNumber: params.orderNumber,
+        sender,
+        recipient: params.recipient,
+        shipping: {
+            deliveryType: params.shipping.deliveryType,
+            agency: params.shipping.agency ?? null,
+            address: params.shipping.address,
+            productType: 'CP',
+            weight: params.shipping.weight,
+            declaredValue: params.shipping.declaredValue,
+            height: params.shipping.height,
+            length: params.shipping.length,
+            width: params.shipping.width,
+        },
+    };
+    try {
+        const response = await firstValueFrom(
+            this.http.post<{ createdAt: string }>(`${this.baseUrl}/shipping/import`, body, {
+                headers: { Authorization: `Bearer ${token}` },
+            }),
+        );
+        return response.data;
+    } catch (error: unknown) {
+        console.error('Error en createShipment:', axios.isAxiosError(error) ? error.response?.data : error);
+        const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+        if (status === 402) {
+            const message = axios.isAxiosError(error) ? (error.response?.data as { message?: string })?.message : undefined;
+            throw new HttpException(message ?? 'Error al importar el envío a MiCorreo', HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        throw new HttpException('Error al comunicarse con Correo Argentino', HttpStatus.BAD_GATEWAY);
+    }
 }
     
     }

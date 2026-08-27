@@ -81,6 +81,8 @@ export class Order {
     @Column({ type: 'varchar', length: 300, nullable: true })
     agencyAddress: string | null; // opcional, idem - útil para mostrar en el admin/email de confirmación sin llamar a /agencies de nuevo
 
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    agencyCity: string | null;
 
     @Column({
         type: 'enum',
@@ -119,6 +121,9 @@ export class Order {
 
     @Column({ type: 'int', nullable: true })
     packageLength?: number;
+
+    @Column({ type: 'timestamp', nullable: true })
+    shippingImportedAt: Date | null;
 
     @ManyToOne(() => Users, (user) => user.orders, { nullable: true }) //para poder comprar sin registro del user
     @JoinColumn({ name: 'userId' })

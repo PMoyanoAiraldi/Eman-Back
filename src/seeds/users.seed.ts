@@ -16,7 +16,7 @@ export const seedUsers = async (dataSource: DataSource) => {
             streetNumber: '1529',
             city: 'López',
             provinceCode: 'S', //Santa Fe
-            phone: '000000000',
+            phone: '3404535333',
             rol: rolEnum.ADMIN,
             state: true,
         },
