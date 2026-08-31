@@ -242,6 +242,7 @@ export class OrderService {
             catalogTotal: Number(order.total),
             shippingCost: order.shippingCost,
             shippingType: order.shippingType,
+            deliveryType: order.deliveryType,
             streetName: order.streetName,
             streetNumber: order.streetNumber,
             floor: order.floor,
@@ -249,6 +250,8 @@ export class OrderService {
             city: order.city,
             provinceCode: order.provinceCode,
             zipCode: order.zipCode,
+            agencyName: order.agencyName,            
+            agencyAddress: order.agencyAddress,
             createdAt: order.createdAt,
             items: order.orderDetail.map(detail => {
                 // Buscamos la imagen marcada como principal; si no hay ninguna, usamos la primera disponible
@@ -269,6 +272,7 @@ export class OrderService {
                     status: lastPayment.status,
                     installments: lastPayment.installments,
                     installmentsAmount: lastPayment.installmentsAmount,
+                    cardBrand: lastPayment.cardBrand,
                 } : null,
         }
     }

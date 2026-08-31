@@ -46,6 +46,9 @@ export class Payments {
     @Column({ length: 255, nullable: true }) // nullable porque al crear el pago todavía no existe
     transactionId: string;
 
+    @Column({ nullable: true }) 
+    cardBrand: string;
+
     @Column({ nullable: true, type: 'date'})
     paidAt: Date;
 

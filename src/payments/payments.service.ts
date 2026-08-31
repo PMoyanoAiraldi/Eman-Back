@@ -128,6 +128,7 @@ export class PaymentsService {
             order:              order,
             method:             mapMethod(result.payment_type_id ?? ''),
             status:             mapStatus(result.status ?? ''),
+            cardBrand:          result.payment_method_id,
             amount:             totalPaid,
             installments:       result.installments,
             installmentsAmount: result.transaction_details?.installment_amount,
@@ -233,6 +234,7 @@ export class PaymentsService {
         if (existingPayment) {
             existingPayment.status = mapStatus(paymentData.status ?? '');
             existingPayment.amount = totalPaid;
+            existingPayment.cardBrand = paymentData.payment_method_id ?? existingPayment.cardBrand;
             existingPayment.paidAt = paymentData.status === 'approved' ? new Date() : existingPayment.paidAt;
             await this.paymentsRepository.save(existingPayment);
         } else {
@@ -240,6 +242,7 @@ export class PaymentsService {
                 order,
                 method: mapMethod(paymentData.payment_type_id ?? ''),
                 status: mapStatus(paymentData.status ?? ''),
+                cardBrand: paymentData.payment_method_id,
                 amount: totalPaid,
                 installments: paymentData.installments,
                 installmentsAmount: paymentData.transaction_details?.installment_amount,
