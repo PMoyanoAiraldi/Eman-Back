@@ -31,9 +31,9 @@ export class CreateProductDto {
     @IsUUID()
     subcategoryId: string;
 
-    @IsInt()
-    @Min(1)
-    @Max(25000)
+    @IsInt({ message: 'El peso debe ser un número entero' })
+    @Min(1, { message: 'El peso debe ser mayor a 0' })
+    @Max(25000, { message: 'El peso no puede superar los 25000 gramos' })
     @IsOptional() // default 200 de la entity
     weightGrams?: number;
 
