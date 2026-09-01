@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min, ValidateIf } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID, Max, Min, ValidateIf } from 'class-validator';
 
 export class UpdateProductDto {
     @IsOptional()
@@ -21,6 +21,12 @@ export class UpdateProductDto {
     @IsOptional()
     @IsBoolean()
     isFeatured?: boolean;
+
+    @IsInt()
+    @Min(1)
+    @Max(25000)
+    @IsOptional() // default 200 de la entity
+    weightGrams?: number;
 
     // Opcional en el negocio: puede no tener marca
     @IsOptional()

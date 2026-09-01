@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class CreateProductDto {
     @IsString()
@@ -30,6 +30,12 @@ export class CreateProductDto {
 
     @IsUUID()
     subcategoryId: string;
+
+    @IsInt()
+    @Min(1)
+    @Max(25000)
+    @IsOptional() // default 200 de la entity
+    weightGrams?: number;
 
     @IsOptional()
     @IsUUID()

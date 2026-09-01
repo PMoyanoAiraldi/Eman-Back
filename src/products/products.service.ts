@@ -60,6 +60,7 @@ export class ProductsService {
             price: createProductDto.price,
             gender: createProductDto.gender,
             isFeatured: createProductDto.isFeatured,
+            weightGrams: createProductDto.weightGrams,
             brand,
             category,
             subcategory,
@@ -168,6 +169,10 @@ export class ProductsService {
         if (updateProductDto.gender) product.gender = updateProductDto.gender;
         if (updateProductDto.isFeatured !== undefined) {
             product.isFeatured = updateProductDto.isFeatured;
+        }
+
+        if (updateProductDto.weightGrams !== undefined) {
+            product.weightGrams = updateProductDto.weightGrams;
         }
 
         if (updateProductDto.brandId) {
