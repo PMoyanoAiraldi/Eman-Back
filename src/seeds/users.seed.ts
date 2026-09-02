@@ -5,6 +5,10 @@ import { rolEnum, Users } from 'src/users/users.entity';
 
 
 export const seedUsers = async (dataSource: DataSource) => {
+  if (!process.env.DEVELOPER_EMAIL || !process.env.DEVELOPER_PASSWORD) {
+    throw new Error('Faltan variables de entorno DEVELOPER_EMAIL / DEVELOPER_PASSWORD en el seed');
+  }
+
   const userRepository = dataSource.getRepository(Users);
 
   const users = [
@@ -20,6 +24,18 @@ export const seedUsers = async (dataSource: DataSource) => {
             rol: rolEnum.ADMIN,
             state: true,
         },
+        {
+            name: process.env.DEVELOPER_NAME,
+            email: process.env.DEVELOPER_EMAIL,
+            password: process.env.DEVELOPER_PASSWORD,
+            streetName: 'Calle Dev',
+            streetNumber: '1',
+            city: 'López',
+            provinceCode: 'S',
+            phone: '1234567891',
+            rol: rolEnum.DEVELOPER,
+            state: true,
+          },
         {
             name: 'Cliente Prueba',
             email: 'cliente@prueba.com',

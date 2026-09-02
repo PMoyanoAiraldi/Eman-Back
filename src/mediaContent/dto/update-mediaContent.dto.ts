@@ -1,12 +1,13 @@
 import { IsEnum, IsOptional, IsString, IsNumber,  Min } from 'class-validator';
 import { MediaType, MediaSection } from '../mediaContent.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 export class UpdateMediaContentDto {
     
-    @ApiProperty({ enum: MediaType, example: MediaType.HERO })
+    @ApiPropertyOptional({ enum: MediaType, example: MediaType.HERO })
     @IsEnum(MediaType)
+    @IsOptional()
     type?: MediaType;
     
     @ApiPropertyOptional({ enum: MediaSection, example: MediaSection.HOME })

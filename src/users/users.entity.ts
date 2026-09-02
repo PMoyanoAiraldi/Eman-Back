@@ -4,6 +4,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 export enum rolEnum {
     ADMIN = 'admin',
     CLIENTE = 'cliente',
+    DEVELOPER = 'developer',
 }
 
 

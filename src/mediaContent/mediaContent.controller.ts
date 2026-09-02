@@ -9,6 +9,7 @@ import { MediaContent, MediaSection, MediaType } from "./mediaContent.entity";
 import { CreateMediaContentDto } from "./dto/create-mediaContent.dto";
 import { UpdateMediaContentDto } from "./dto/update-mediaContent.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { UpdateFocalPointDto } from "./dto/update-focal-point.dto";
 
 
 
@@ -37,7 +38,7 @@ export class MediaContentController {
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     @ApiConsumes('multipart/form-data')
     @ApiBody({
@@ -65,7 +66,7 @@ export class MediaContentController {
     
     @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     @ApiConsumes('multipart/form-data')
     @ApiBody({
@@ -90,16 +91,24 @@ export class MediaContentController {
         return this.mediaContentService.update(id, updateMediaContentDto, file);
     }
 
+    @Patch(':id/focal-point')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.DEVELOPER)
+    @ApiSecurity('bearer')
+    updateFocalPoint(@Param('id') id: string, @Body() dto: UpdateFocalPointDto) {
+        return this.mediaContentService.updateFocalPoint(id, dto.focalPoint);
+    }
+
     @Patch(':id/toggle')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     toggleActive(@Param('id') id: string) {
         return this.mediaContentService.toggleActive(id);
     }
 
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     @Delete(':id')
     remove(@Param('id') id: string) {

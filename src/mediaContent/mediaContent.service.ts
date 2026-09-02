@@ -73,6 +73,12 @@ export class MediaContentService {
         return this.mediaContentRepository.save(media);
     }
 
+    async updateFocalPoint(id: string, focalPoint: string): Promise<MediaContent> {
+        const media = await this.findOne(id);
+        media.focalPoint = focalPoint;
+        return this.mediaContentRepository.save(media);
+    }
+
 
     async toggleActive(id: string): Promise<MediaContent> {
         const media = await this.findOne(id);
