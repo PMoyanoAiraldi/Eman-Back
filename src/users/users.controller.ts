@@ -25,7 +25,7 @@ export class UsersController {
     @ApiQuery({ name: 'rol', required: false, enum: rolEnum })
     @ApiQuery({ name: 'search', required: false })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     async findAll(
         @Query('page') page = '1',
@@ -48,7 +48,7 @@ export class UsersController {
     @ApiResponse({ status: 200, description: 'Usuario encontrado', type: Users })
     @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     async findOne(@Param('id') id: string): Promise<Users | null> {
             return this.usersService.getUserForId(id);
@@ -68,7 +68,7 @@ export class UsersController {
         }
     })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     async updateState(
         @Param('id') id: string,

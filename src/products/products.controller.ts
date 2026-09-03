@@ -24,7 +24,7 @@ export class ProductsController {
     @ApiResponse({ status: 400, description: 'El producto ya existe.' })
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     @ApiBody({
         description: 'Datos para crear el producto',
@@ -68,7 +68,7 @@ export class ProductsController {
     @ApiOperation({ summary: 'Listar todos los productos (activos e inactivos) - Solo Admin' })
     @ApiResponse({ status: 200, description: 'Lista de productos', type: [ResponseProductDto] })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     async findAllForAdmin(): Promise<ResponseProductDto[]> {
         return this.productsService.getAllProducts();
@@ -92,7 +92,7 @@ export class ProductsController {
     @ApiResponse({ status: 200, description: 'Producto encontrado', type: ResponseProductDto })
     @ApiResponse({ status: 404, description: 'Producto no encontrado' })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     async findOneForAdmin(@Param('id') id: string): Promise<Products> {
         return this.productsService.getProduct(id);
@@ -104,7 +104,7 @@ export class ProductsController {
     @ApiResponse({ status: 200, description: 'Producto modificado', type: ResponseProductDto })
     @ApiResponse({ status: 404, description: 'Producto no encontrado' })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     @ApiBody({
         description: 'Datos para actualizar el producto',
@@ -131,7 +131,7 @@ export class ProductsController {
     @ApiOperation({ summary: 'Cambiar estado del producto (activar/desactivar) - Solo Admin' })
     @ApiResponse({ status: 200, description: 'Estado actualizado correctamente' })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     async updateState(
         @Param('id') id: string,
@@ -143,7 +143,7 @@ export class ProductsController {
     @Patch(':id/publish')
     @ApiOperation({ summary: 'Publicar un producto (sacarlo de borrador) - Solo Admin' })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     async publish(@Param('id') id: string): Promise<ResponseProductDto> {
         return this.productsService.publish(id);
@@ -154,7 +154,7 @@ export class ProductsController {
     @ApiResponse({ status: 200, description: 'Borrador eliminado' })
     @ApiResponse({ status: 400, description: 'Solo se pueden eliminar borradores' })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     async remove(@Param('id') id: string) {
         return this.productsService.deleteDraft(id);

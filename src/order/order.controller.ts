@@ -78,7 +78,7 @@ export class OrderController {
     @ApiOperation({ summary: 'Obtener todas las órdenes - Solo Admin' })
     @ApiResponse({ status: 200, description: 'Lista de órdenes' })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     findAll() {
         return this.orderService.getAllOrders()
@@ -100,7 +100,7 @@ export class OrderController {
     @ApiResponse({ status: 200, description: 'Orden encontrada' })
     @ApiResponse({ status: 404, description: 'Orden no encontrada' })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     findOne(@Param('id') id: string) {
         return this.orderService.getOrderById(id)
@@ -111,7 +111,7 @@ export class OrderController {
     @ApiResponse({ status: 200, description: 'Estado actualizado correctamente' })
     @ApiResponse({ status: 404, description: 'Orden no encontrada' })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     @ApiBody({
         description: 'Nuevo estado de la orden',
@@ -159,7 +159,7 @@ export class OrderController {
     @ApiResponse({ status: 400, description: 'La orden no es de Correo Argentino o ya tiene envío importado' })
     @ApiResponse({ status: 404, description: 'Orden no encontrada' })
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(rolEnum.ADMIN)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
     generateShippingLabel(@Param('id') id: string) {
         return this.orderService.generateShippingLabel(id);
