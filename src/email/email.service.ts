@@ -54,6 +54,11 @@ async sendDispatchNotification(order: Order) {
         return;
     }
 
+    if (!order.trackingNumber) {
+        this.logger.warn(`Orden ${order.id} marcada como enviada sin número de seguimiento, no se envía notificación`);
+        return;
+    }
+
     try {
         const response = await this.resend.emails.send({
             from: 'Eman <onboarding@resend.dev>',
@@ -64,7 +69,8 @@ async sendDispatchNotification(order: Order) {
                     <h2 style="color: #C9A84C;">¡Tu pedido está en camino, ${order.guestName}!</h2>
                     <p>Ya despachamos tu pedido por Correo Argentino.</p>
                     <p><strong>Número de orden:</strong> ${order.id}</p>
-                    <p>Vas a recibirlo en la dirección que indicaste al momento de la compra.</p>
+                    <p><strong>Número de seguimiento:</strong> ${order.trackingNumber}</p>
+                    <p>Podés rastrear tu pedido en el <a href="https://www.correoargentino.com.ar/formularios/e-commerce" style="color: #C9A84C;">sitio de Correo Argentino</a> con ese número.</p>
                 </div>
             `,
         });

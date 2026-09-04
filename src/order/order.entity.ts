@@ -125,6 +125,9 @@ export class Order {
     @Column({ type: 'timestamp', nullable: true })
     shippingImportedAt: Date | null;
 
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    trackingNumber: string | null;
+
     @ManyToOne(() => Users, (user) => user.orders, { nullable: true }) //para poder comprar sin registro del user
     @JoinColumn({ name: 'userId' })
     user: Users | null;

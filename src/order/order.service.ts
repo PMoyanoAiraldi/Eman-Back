@@ -184,9 +184,22 @@ export class OrderService {
         })
     }
 
-    async updateState(id: string, state: stateEnum): Promise<Order> {
+    async updateState(id: string, state: stateEnum, trackingNumber?: string): Promise<Order> {
         const order = await this.getOrderById(id)
+        if (
+        state === stateEnum.ENVIADO &&
+        order.shippingType === shippingTypeEnum.CORREO_ARGENTINO &&
+        !trackingNumber &&
+        !order.trackingNumber
+    ) {
+        throw new BadRequestException('Necesitás cargar el número de seguimiento para marcar este pedido como enviado');
+    }
+
         order.state = state 
+
+        if (trackingNumber) {
+        order.trackingNumber = trackingNumber
+    }
         
         const updatedOrder = await this.orderRepository.save(order)
 
