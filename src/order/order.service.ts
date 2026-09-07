@@ -9,6 +9,16 @@ import { EmailService } from "src/email/email.service";
 import { ShippingService } from "src/shipping/shipping.service";
 import { CorreoArgentinoService } from "src/correo-argentino/correo-argentino.service";
 
+export interface OrderFilters {
+    states?: stateEnum[];
+    shippingTypes?: shippingTypeEnum[];
+    labelStatuses?: ('generated' | 'pending' | 'na')[];
+    dateFrom?: string;
+    dateTo?: string;
+    search?: string;
+}
+
+
 @Injectable()
 export class OrderService {
     constructor(
@@ -157,16 +167,57 @@ export class OrderService {
         return order
     }
 
-    async getAllOrders(): Promise<Order[]> {
-        return this.orderRepository.find({
-            relations: [
-                'orderDetail',
-                'orderDetail.product',
-                'orderDetail.variant',
-            ],
-            order: { createdAt: 'DESC' }
-        })
+    async getAllOrders(filters: OrderFilters = {}): Promise<Order[]> {
+        const query = this.orderRepository.createQueryBuilder('order')
+            .leftJoinAndSelect('order.orderDetail', 'orderDetail')
+            .leftJoinAndSelect('orderDetail.product', 'product')
+            .leftJoinAndSelect('orderDetail.variant', 'variant')
+            .orderBy('order.createdAt', 'DESC');
+
+        if (filters.states?.length) {
+            query.andWhere('order.state IN (:...states)', { states: filters.states });
+        }
+
+        if (filters.shippingTypes?.length) {
+            query.andWhere('order.shippingType IN (:...shippingTypes)', { shippingTypes: filters.shippingTypes });
+        }
+
+        if (filters.labelStatuses?.length) {
+            const conditions: string[] = [];
+            if (filters.labelStatuses.includes('generated')) {
+                conditions.push('(order.shippingType = :correoArg AND order.shippingImportedAt IS NOT NULL AND order.state != :cancelado)');
+            }
+            if (filters.labelStatuses.includes('pending')) {
+                conditions.push('(order.shippingType = :correoArg AND order.shippingImportedAt IS NULL AND order.state != :cancelado)');
+            }
+            if (filters.labelStatuses.includes('na')) {
+                conditions.push('(order.shippingType != :correoArg OR order.state = :cancelado)');
+            }
+            if (conditions.length) {
+                query.andWhere(`(${conditions.join(' OR ')})`, {
+                    correoArg: shippingTypeEnum.CORREO_ARGENTINO,
+                    cancelado: stateEnum.CANCELADO,
+                });
+            }
+        }
+
+    if (filters.dateFrom) {
+        query.andWhere('order.createdAt >= :dateFrom', { dateFrom: filters.dateFrom });
     }
+
+    if (filters.dateTo) {
+        query.andWhere('order.createdAt <= :dateTo', { dateTo: `${filters.dateTo} 23:59:59` });
+    }
+
+    if (filters.search) {
+        query.andWhere('(order.guestName ILIKE :search OR order.guestEmail ILIKE :search)', {
+            search: `%${filters.search}%`,
+        });
+    }
+
+    return query.getMany();
+    
+}
 
     async getOrdersByUser(userId: string): Promise<Order[]> {
         return this.orderRepository.find({

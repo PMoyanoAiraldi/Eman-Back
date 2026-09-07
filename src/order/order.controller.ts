@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
@@ -6,7 +6,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guards/roles.guard";
 import { Roles } from "src/auth/decorators/roles.decorator";
 import { rolEnum, Users } from "src/users/users.entity";
-import { stateEnum } from "./order.entity";
+import { shippingTypeEnum, stateEnum } from "./order.entity";
 import { OptionalJwtAuthGuard } from "src/auth/guards/optional-jwt-auth.guard";
 
 interface RequestWithUser extends Request {
@@ -80,8 +80,22 @@ export class OrderController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
-    findAll() {
-        return this.orderService.getAllOrders()
+    findAll(
+        @Query('state') state?: string,
+        @Query('shippingType') shippingType?: string,
+        @Query('labelStatus') labelStatus?: string,
+        @Query('dateFrom') dateFrom?: string,
+        @Query('dateTo') dateTo?: string,
+        @Query('search') search?: string,
+    ) {
+        return this.orderService.getAllOrders({
+            states: state ? (state.split(',') as stateEnum[]) : undefined,
+            shippingTypes: shippingType ? (shippingType.split(',') as shippingTypeEnum[]) : undefined,
+            labelStatuses: labelStatus ? (labelStatus.split(',') as ('generated' | 'pending' | 'na')[]) : undefined,
+            dateFrom,
+            dateTo,
+            search,
+        })
     }
 
     @Get('user/:userId')
