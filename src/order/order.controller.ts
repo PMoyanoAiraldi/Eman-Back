@@ -123,15 +123,17 @@ export class OrderController {
                     type: 'string',
                     enum: ['pendiente', 'confirmado', 'enviado', 'entregado', 'cancelado'],
                     example: 'confirmado'
-                }
+                },
+                trackingNumber: { type: 'string', example: '000500076393019A3G0C701' }
             }
         }
         })
     updateState(
         @Param('id') id: string,
-        @Body('state') state: stateEnum
+        @Body('state') state: stateEnum,
+        @Body('trackingNumber') trackingNumber?: string,
     ) {
-        return this.orderService.updateState(id, state)
+        return this.orderService.updateState(id, state, trackingNumber)
     }
 
     @Get('mine/:id/summary')
@@ -164,8 +166,5 @@ export class OrderController {
     generateShippingLabel(@Param('id') id: string) {
         return this.orderService.generateShippingLabel(id);
     }
-
-
-
 
 }
