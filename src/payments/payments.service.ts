@@ -7,7 +7,6 @@ import { Payment } from 'mercadopago';
 import { PaymentFormData, MercadoPagoWebhookQuery, MercadoPagoWebhookBody } from './payments.types';
 import { stateEnum } from '../order/order.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { LessThan } from 'typeorm';
 import { ProductVariants } from '../productVariants/productVariants.entity';
 import { methodEnum, Payments, statusEnum } from './payments.entity';
 import { EmailService } from 'src/email/email.service';
@@ -143,11 +142,14 @@ export class PaymentsService {
             await this.orderRepository.update(orderId, { state: stateEnum.CONFIRMADO });
 
             if (!order.confirmationEmailSentAt) {
-            await this.emailService.sendPaymentConfirmation(order);
-            await this.orderRepository.update(orderId, { confirmationEmailSentAt: new Date() });
-        }
+                await this.emailService.sendPaymentConfirmation(order);
+                await this.orderRepository.update(orderId, { confirmationEmailSentAt: new Date() });
+            }
         } else if (result.status === 'rejected') {
-            await this.orderRepository.update(orderId, { state: stateEnum.CANCELADO });
+            await this.restoreStockAndCancel(orderId); //repone el stock
+            await this.emailService.sendPaymentRejection(order); //avisa al cliente
+        } else if (result.status === 'in_process') {
+            await this.emailService.sendPaymentUnderReview(order);//avisa que esta en revision
         }
         // Si es 'in_process', lo dejamos como está (pendiente) — lo resuelve el webhook después
 
@@ -162,38 +164,47 @@ export class PaymentsService {
     }
 
 
-    @Cron(CronExpression.EVERY_HOUR)
+    @Cron(CronExpression.EVERY_MINUTE)
     async cancelStaleOrders() {
-        const limite = new Date();
-        limite.setHours(limite.getHours() - 24);
+        const limiteSinPago = new Date();
+        limiteSinPago.setHours(limiteSinPago.getHours() - 24);
 
-        const orderExpired = await this.orderRepository.find({
-            where: {
-                state: stateEnum.PENDIENTE,
-                createdAt: LessThan(limite),
-            },
-            relations: ['orderDetail', 'orderDetail.variant'], // necesitamos los detalles para saber qué stock devolver
-        });
+        const limiteEnRevision = new Date();
+        limiteEnRevision.setMinutes(limiteEnRevision.getMinutes() - 2);
 
-        for (const order of orderExpired) {
-            await this.dataSource.transaction(async (manager) => {
-                // Devolver el stock de cada línea de la orden
-                for (const detail of order.orderDetail) {
-                    const variant = await manager.findOne(ProductVariants, {
-                        where: { id: detail.variant.id },
-                    });
-                    if (variant) {
-                        variant.stock += detail.quantity;
-                        await manager.save(ProductVariants, variant);
-                    }
-                }
-                // Cancelar la orden
-                await manager.update(Order, order.id, { state: stateEnum.CANCELADO });
-            });
+        // Caso 1: nunca hubo ni un intento de pago (carrito abandonado)
+        const sinPago = await this.orderRepository
+            .createQueryBuilder('order')
+            .leftJoin('order.payments', 'payment')
+            .where('order.state = :pendiente', { pendiente: stateEnum.PENDIENTE })
+            .andWhere('order.createdAt < :limite', { limite: limiteSinPago })
+            .andWhere('payment.id IS NULL')
+            .getMany();
+
+         // Caso 2: hay un Payment en revisión de MP (in_process) que ya pasó el margen
+        const enRevision = await this.orderRepository
+            .createQueryBuilder('order')
+            .innerJoin('order.payments', 'payment')
+            .where('order.state = :pendiente', { pendiente: stateEnum.PENDIENTE })
+            .andWhere('order.createdAt < :limite', { limite: limiteEnRevision })
+            .andWhere('payment.status = :statusPendiente', { statusPendiente: statusEnum.PENDIENTE })
+            .getMany();  
+            
+        const vencidas = [...sinPago, ...enRevision];
+
+        for (const order of sinPago) {
+            await this.restoreStockAndCancel(order.id)
+                
         }
 
-        if (orderExpired.length > 0) {
-            console.log(`Canceladas ${orderExpired.length} órdenes vencidas, stock repuesto`);
+        for (const order of enRevision) {
+            await this.restoreStockAndCancel(order.id);
+            await this.emailService.sendAdminReviewTimeoutAlert(order);
+            await this.emailService.sendPaymentTimeoutNotice(order);
+        }
+
+        if (vencidas.length > 0) {
+            console.log(`Canceladas ${vencidas.length} órdenes vencidas, stock repuesto`);
         }
     }
 
@@ -253,18 +264,57 @@ export class PaymentsService {
             await this.paymentsRepository.save(newPayment);
         }
 
+        const wasPending = order.state === stateEnum.PENDIENTE;
+        const wasAlreadyCancelled = order.state === stateEnum.CANCELADO;
+
         // Actualizamos el estado de la orden
         if (paymentData.status === 'approved') {
+            if (wasAlreadyCancelled) {
+            await this.emailService.sendAdminLatePaymentAlert(order, String(paymentData.id)); // si fue aprobada, se envia email a Andre
+            await this.emailService.sendPaymentApprovedNeedsContact(order); //y al cliente
+            return { received: true };
+        }
             await this.orderRepository.update(orderId, { state: stateEnum.CONFIRMADO });
              // Evitar reenviar el mail si el webhook llega duplicado
             if (!order.confirmationEmailSentAt) {
                 await this.emailService.sendPaymentConfirmation(order);
                 await this.orderRepository.update(orderId, { confirmationEmailSentAt: new Date() });
             }
+            if (wasPending) {
+            await this.emailService.sendAdminOrderReadyToShip(order);
+            }
         } else if (paymentData.status === 'rejected') {
-            await this.orderRepository.update(orderId, { state: stateEnum.CANCELADO });
+            if (wasAlreadyCancelled) { // ya fue cancelada? antes de tocar stock
+                return { received: true }; // si es si
+            }
+            await this.restoreStockAndCancel(orderId); // repone stock
+            await this.emailService.sendPaymentRejection(order); //al cliente se envia "pago rechazado"
+            if (wasPending) {
+                await this.emailService.sendAdminOrderRejectedAfterReview(order);
+            }
         }
 
         return { received: true };
+    }
+
+    private async restoreStockAndCancel(orderId: string) {
+        const order = await this.orderRepository.findOne({
+            where: { id: orderId },
+            relations: ['orderDetail', 'orderDetail.variant'],
+        });
+        if (!order) return;
+
+        await this.dataSource.transaction(async (manager) => {
+            for (const detail of order.orderDetail) {
+                const variant = await manager.findOne(ProductVariants, {
+                    where: { id: detail.variant.id },
+                });
+                if (variant) {
+                    variant.stock += detail.quantity;
+                    await manager.save(ProductVariants, variant);
+                }
+            }
+            await manager.update(Order, order.id, { state: stateEnum.CANCELADO });
+        });
     }
 }
