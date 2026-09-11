@@ -169,6 +169,15 @@ export class OrderController {
     return this.orderService.getOrderSummary(id)
     }
 
+    @Post(':id/cancel')
+    @ApiOperation({ summary: 'Cancelar una orden pendiente y reponer stock - Público (checkout abandonado)' })
+    @ApiResponse({ status: 200, description: 'Orden cancelada correctamente' })
+    @ApiResponse({ status: 400, description: 'La orden no está en estado pendiente' })
+    @ApiResponse({ status: 404, description: 'Orden no encontrada' })
+    cancelOrder(@Param('id') id: string) {
+        return this.orderService.cancelOrder(id);
+    }
+
     @Post(':id/shipping-label')
     @ApiOperation({ summary: 'Generar etiqueta de envío en MiCorreo - Solo Admin' })
     @ApiResponse({ status: 200, description: 'Envío importado correctamente a MiCorreo' })

@@ -384,5 +384,37 @@ export class OrderService {
     order.shippingImportedAt = new Date(result.createdAt);
     return this.orderRepository.save(order);
 }
+
+async cancelOrder(id: string): Promise<{ message: string }> {
+    const order = await this.orderRepository.findOne({
+        where: { id },
+        relations: ['orderDetail', 'orderDetail.variant'],
+    });
+    if (!order) throw new NotFoundException(`Orden con ID ${id} no encontrada`);
+
+    // Idempotente: si ya estaba cancelada (por ejemplo, el cliente clickeó "Volver" dos veces), no reponemos stock de nuevo
+    if (order.state === stateEnum.CANCELADO) {
+        return { message: 'La orden ya estaba cancelada' };
+    }
+
+    if (order.state !== stateEnum.PENDIENTE) {
+        throw new BadRequestException('Solo se pueden cancelar órdenes pendientes');
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+        for (const detail of order.orderDetail) {
+            const variant = await manager.findOne(ProductVariants, {
+                where: { id: detail.variant.id },
+            });
+            if (variant) {
+                variant.stock += detail.quantity;
+                await manager.save(ProductVariants, variant);
+            }
+        }
+        await manager.update(Order, order.id, { state: stateEnum.CANCELADO });
+    });
+
+    return { message: 'Orden cancelada y stock repuesto' };
+}
 }
 
