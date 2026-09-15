@@ -37,13 +37,14 @@ export class OrderService {
     async createOrder(createOrderDto: CreateOrderDto, userId: string | null): Promise<Order> {
         return await this.dataSource.transaction(async (manager) => { // <- transaction: grupo de operaciones de base de datos que se ejecutan todas juntas o ninguna 
 
-        // 1. Validar variantes, stock, y calcular subtotal ANTES de crear la orden
+        // 1. Validar variantes, stock, y calcular subtotal con el precio REAL (no el del DTO)
         let subtotal = 0
-        const variantsToUpdate: { variant: ProductVariants; newStock: number }[] = []
+        const variantsToUpdate: { variant: ProductVariants; newStock: number; realUnitPrice: number }[] = []
 
         for (const item of createOrderDto.items) {
             const variant = await manager.findOne(ProductVariants, {
-                where: { id: item.variantId }
+                where: { id: item.variantId },
+                relations: ['product'],
             })
             if (!variant) {
                 throw new NotFoundException(`Variante ${item.variantId} no encontrada`)
@@ -53,18 +54,13 @@ export class OrderService {
                     `Stock insuficiente para "${item.productName}". Stock disponible: ${variant.stock}`
                 )
             }
-            variantsToUpdate.push({ variant, newStock: variant.stock - item.quantity })
-            subtotal += item.unitPrice * item.quantity
+            const realUnitPrice = variant.product.price
+
+            variantsToUpdate.push({ variant, newStock: variant.stock - item.quantity, realUnitPrice })
+            subtotal += realUnitPrice * item.quantity
         }
 
-        // 2. Calcular shippingCost en el backend
-        const FREE_SHIPPING_THRESHOLD = 150000
-        const isRegisteredUser = userId !== null
-        const qualifiesForFreeShipping = isRegisteredUser && subtotal >= FREE_SHIPPING_THRESHOLD
-
-        const shippingCost    = qualifiesForFreeShipping
-            ? 0
-            : (createOrderDto.shippingCost ?? 0)
+        const shippingCost    = createOrderDto.shippingCost ?? 0
 
         // 2.5. Calcular peso y dimensiones del paquete (solo aplica a Correo Argentino)
         // Nota: se calcula aunque el envío haya salido gratis por superar el umbral —
@@ -126,7 +122,7 @@ export class OrderService {
        // 4. Descontar stock y crear OrderDetail
         for (let i = 0; i < createOrderDto.items.length; i++) {
             const item = createOrderDto.items[i]
-            const { variant, newStock } = variantsToUpdate[i]
+            const { variant, newStock, realUnitPrice  } = variantsToUpdate[i]
             
         variant.stock = newStock
         await manager.save(ProductVariants, variant)
@@ -138,7 +134,7 @@ export class OrderService {
             variant:     { id: item.variantId },
             productName: item.productName,
             quantity:    item.quantity,
-            unitPrice:   item.unitPrice,
+            unitPrice:   realUnitPrice,
         })
         await manager.save(OrderDetail, detail)
 
