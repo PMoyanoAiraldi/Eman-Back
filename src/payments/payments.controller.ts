@@ -16,15 +16,14 @@ export class PaymentsController {
     description: 'Datos para crear la preferencia de pago',
     schema: {
         type: 'object',
-        required: [ 'orderId', 'shippingCost'],
+        required: [ 'orderId'],
         properties: {
             orderId:      { type: 'string', example: 'uuid-de-la-orden' },
-            shippingCost: { type: 'number', example: 0 },
         }
     }
     })
-    async createPreference(@Body() body: { orderId: string, shippingCost: number }) {
-        return this.paymentsService.createPreference(body.orderId, body.shippingCost)
+    async createPreference(@Body() body: { orderId: string }) {
+        return this.paymentsService.createPreference(body.orderId)
     }
 
     @Post('webhook')

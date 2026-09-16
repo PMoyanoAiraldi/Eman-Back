@@ -46,7 +46,7 @@ export class PaymentsService {
         });
     }
 
-    async createPreference( orderId: string, shippingCost: number) {
+    async createPreference( orderId: string) {
 
         // 1. Buscar la orden con sus detalles
         const order = await this.orderRepository.findOne({
@@ -68,7 +68,7 @@ export class PaymentsService {
                     currency_id: 'ARS',
                 })),
                 shipments: {
-                    cost: shippingCost,
+                    cost: Number(order.shippingCost),
                     mode: 'not_specified',
                 },
                 payment_methods: {
