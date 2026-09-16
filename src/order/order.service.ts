@@ -8,6 +8,7 @@ import { CreateOrderDto } from "./dto/create-order.dto";
 import { EmailService } from "src/email/email.service";
 import { ShippingService } from "src/shipping/shipping.service";
 import { CorreoArgentinoService } from "src/correo-argentino/correo-argentino.service";
+import { ConfigService } from '@nestjs/config';
 
 export interface OrderFilters {
     states?: stateEnum[];
@@ -31,7 +32,8 @@ export class OrderService {
         private dataSource: DataSource,
         private emailService: EmailService,
         private readonly shippingService: ShippingService,
-        private readonly correoArgentinoService: CorreoArgentinoService
+        private readonly correoArgentinoService: CorreoArgentinoService,
+        private readonly config: ConfigService
     ) { }
 
     async createOrder(createOrderDto: CreateOrderDto, userId: string | null): Promise<Order> {
@@ -60,12 +62,12 @@ export class OrderService {
             subtotal += realUnitPrice * item.quantity
         }
 
-        const shippingCost    = createOrderDto.shippingCost ?? 0
+        // 2.5. Calcular peso/dimensiones y cotizar el envío real (solo Correo Argentino)
+        const isSucursal = createOrderDto.shippingType === shippingTypeEnum.CORREO_ARGENTINO
+            && createOrderDto.deliveryType === DeliveryType.SUCURSAL;
 
-        // 2.5. Calcular peso y dimensiones del paquete (solo aplica a Correo Argentino)
-        // Nota: se calcula aunque el envío haya salido gratis por superar el umbral —
-        // el paquete pesa lo mismo, lo que cambia es el costo, no el bulto físico.
         let packageData: Partial<Order> = {}
+        let shippingCost = createOrderDto.shippingCost ?? 0 // default: Coordinado/Retiro
 
         if (createOrderDto.shippingType === shippingTypeEnum.CORREO_ARGENTINO) {
             const pkg = await this.shippingService.calculatePackage(
@@ -80,11 +82,27 @@ export class OrderService {
                 packageWidth:  pkg.width,
                 packageLength: pkg.length,
             }
+
+            const originPostalCode = this.config.getOrThrow<string>('CORREO_SENDER_POSTAL_CODE')
+
+            const rates = await this.correoArgentinoService.getRates({
+                postalCodeOrigin: originPostalCode,
+                postalCodeDestination: createOrderDto.zipCode,
+                weight: pkg.weight,
+                height: pkg.height,
+                width: pkg.width,
+                length: pkg.length,
+                deliveredType: isSucursal ? 'S' : 'D',
+            })
+            const rate = rates.find(r => r.deliveredType === (isSucursal ? 'S' : 'D'))
+            if (!rate) {
+                throw new BadRequestException('No se pudo cotizar el envío para ese código postal')
+            }
+            shippingCost = rate.price
         }
 
-          // 3. Crear la orden base
-        const isSucursal = createOrderDto.shippingType === shippingTypeEnum.CORREO_ARGENTINO
-            && createOrderDto.deliveryType === DeliveryType.SUCURSAL;
+        
+        
 
         const order = manager.create(Order, {  // manager: es como un repository temporal que agrupa todo
             guestName:      createOrderDto.guestName,
