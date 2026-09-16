@@ -67,7 +67,7 @@ export class OrderService {
             && createOrderDto.deliveryType === DeliveryType.SUCURSAL;
 
         let packageData: Partial<Order> = {}
-        let shippingCost = createOrderDto.shippingCost ?? 0 // default: Coordinado/Retiro
+        let shippingCost = 0 // default: Coordinado/Retiro
 
         if (createOrderDto.shippingType === shippingTypeEnum.CORREO_ARGENTINO) {
             const pkg = await this.shippingService.calculatePackage(

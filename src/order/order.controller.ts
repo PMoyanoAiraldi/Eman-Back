@@ -48,7 +48,6 @@ export class OrderController {
                 agencyName:     { type: 'string', example: 'Monte Grande' },
                 agencyAddress:  { type: 'string', example: 'Vicente López 448' },
                 agencyCity:     { type: 'string', example: 'Monte Grande' },
-                shippingCost:   { type: 'number', example: 0 },
                // discountAmount: { type: 'number', example: 0 },
                 items: {
                     type: 'array',
@@ -60,7 +59,6 @@ export class OrderController {
                             variantId:   { type: 'string', example: 'uuid-de-la-variante' },
                             productName: { type: 'string', example: 'Cardigan de hilo' },
                             quantity:    { type: 'number', example: 1 },
-                            unitPrice:   { type: 'number', example: 32000 },
                         }
                     }
                 }

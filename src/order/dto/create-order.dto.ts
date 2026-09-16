@@ -105,10 +105,6 @@ export class CreateOrderDto {
     @IsEnum(shippingTypeEnum)
     shippingType: shippingTypeEnum;
 
-    @IsNumber()
-    @IsOptional()
-    shippingCost?: number;
-
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => OrderItemDto)
