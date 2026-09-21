@@ -4,7 +4,8 @@ import { AuthService } from "./auth.service";
 import { LoginUserDto } from "./dto/login-user.dto";
 import { RegisterUserDto } from "./dto/register-user.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
-import type { Request } from 'express';
+import type { Request, Response} from 'express';
+import { RegisterFromOrderDto } from "./dto/register-from-order.dto";
 
 @ApiTags("Auth")
 @Controller('auth')
@@ -33,12 +34,9 @@ export class AuthController {
             },
         },
     })
-        async createUser(@Body() createUser: RegisterUserDto) {
-        const user = await this.authService.register(createUser)
+    async createUser(@Body() createUser: RegisterUserDto) {
+        return await this.authService.register(createUser)
 
-        return {
-            message: `Cliente creado exitosamente`, user
-        };
     }
 
     @Post('login')
@@ -57,7 +55,7 @@ export class AuthController {
 })
     async signIn(
         @Body() credentials: LoginUserDto,
-        @Res({ passthrough: true }) res: any, // ← passthrough permite que NestJS siga manejando la respuesta
+        @Res({ passthrough: true }) res: Response, // ← passthrough permite que NestJS siga manejando la respuesta
     ) {
         return  await  this.authService.login(credentials, res)
         
@@ -68,7 +66,7 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Token renovado exitosamente' })
     async refresh(
         @Req() req: any,
-        @Res({ passthrough: true }) res: any,
+        @Res({ passthrough: true }) res: Response,
     ) {
         const refreshToken = (req as Request).cookies['refresh_token'] as string;
         return await this.authService.refresh(refreshToken, res);
@@ -79,11 +77,24 @@ export class AuthController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Cerrar sesión' })
     async logout(
-        @Req() req: any,
-        @Res({ passthrough: true }) res: any,
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response,
     ) {
         const userId = (req as Request & { user: { id: string } }).user.id;
         return await this.authService.logout(userId, res);
+    }
+
+    @Post('register-from-order')
+    @ApiOperation({ summary: 'Registrar un cliente a partir de una orden de guest checkout y vincularla a su cuenta nueva' })
+    @ApiResponse({ status: 201, description: 'Cuenta creada y orden vinculada' })
+    @ApiResponse({ status: 400, description: 'La orden ya está asociada a una cuenta' })
+    @ApiResponse({ status: 403, description: 'El email no coincide con el de la orden' })
+    @ApiResponse({ status: 404, description: 'Orden no encontrada' })
+    async registerFromOrder(
+        @Body() dto: RegisterFromOrderDto,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        return await this.authService.registerFromOrder(dto, res)
     }
 
 

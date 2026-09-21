@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -7,6 +7,8 @@ import { Users } from "src/users/users.entity";
 import { LoginUserDto } from "./dto/login-user.dto";
 import { RegisterUserDto } from "./dto/register-user.dto";
 import type { Response } from 'express';
+import { Order } from "src/order/order.entity";
+import { RegisterFromOrderDto } from "./dto/register-from-order.dto";
 
 @Injectable()
 export class AuthService {
@@ -14,11 +16,12 @@ export class AuthService {
         @InjectRepository(Users)
         private readonly usersRepository: Repository<Users>,
         private readonly jwtService: JwtService,
-    
+        @InjectRepository(Order) 
+        private orderRepository: Repository<Order>,
         
     ) { }
 
-    async register(registerUser: RegisterUserDto): Promise<{ message: string }> {
+    async createUser(registerUser: RegisterUserDto): Promise<Users> {
         const existingUser = await this.usersRepository.findOne({
             where: { email: registerUser.email },
         });
@@ -34,12 +37,30 @@ export class AuthService {
             password: hashedPassword,
         });
 
-        await this.usersRepository.save(newUser);
-
-        return { message: 'Usuario registrado correctamente' };
+        return this.usersRepository.save(newUser);
     }
 
-    async login(loginUser: LoginUserDto, res: any): Promise<{ user: Partial<Users>, accessToken: string }> {
+    async register(dto: RegisterUserDto): Promise<{ message: string, user: Partial<Users> }> {
+        const newUser = await this.createUser(dto)
+
+        const safeUser = {
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email,
+            streetName: newUser.streetName,
+            streetNumber: newUser.streetNumber,
+            floor: newUser.floor,
+            apartment: newUser.apartment,
+            city: newUser.city,
+            provinceCode: newUser.provinceCode,
+            phone: newUser.phone,
+            state: newUser.state,
+            rol: newUser.rol,
+        }
+        return { message: 'Usuario registrado correctamente', user: safeUser}
+    }
+
+    async login(loginUser: LoginUserDto, res: Response): Promise<{ user: Partial<Users>, accessToken: string }> {
         const user = await this.usersRepository.findOne({ 
             where: {email: loginUser.email},
         });
@@ -56,13 +77,14 @@ export class AuthService {
 
         const isPasswordMatching = await bcrypt.compare(loginUser.password, user.password);
 
-        console.log('Contraseña recibida en el login:', loginUser.password);
-        console.log('Contraseña coincide:', isPasswordMatching);
-
         if (!isPasswordMatching) {
             throw new HttpException('Email o contraseña incorrecto', HttpStatus.UNAUTHORIZED);
         }
 
+        return this.issueSession(user, res)
+    }
+
+    private async issueSession(user: Users, res: Response): Promise<{ user: Partial<Users>, accessToken: string }> {
         // Generamos ambos tokens
         const { accessToken, refreshToken } = await this.createTokens(user);
 
@@ -70,14 +92,13 @@ export class AuthService {
         await this.saveRefreshToken(user.id, refreshToken);
 
         // El refresh token va en cookie HttpOnly (el frontend nunca lo ve)
-        (res as Response).cookie('refresh_token', refreshToken, {
+        res.cookie('refresh_token', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días en ms
             path: '/auth/refresh',
         });
-
 
         //No devolvemos ni password, ni refreshToken, ni refreshTokenExpirity
         const userWithoutSensitiveData = {
@@ -99,29 +120,29 @@ export class AuthService {
             user: userWithoutSensitiveData,
             accessToken, // ← solo el access token va en el body
         };
-
     }
 
+
     private async createTokens(user: Users): Promise<{ accessToken: string, refreshToken: string }> {
-    const payload = {
-        sub: user.id,      // ← sub no id
-        email: user.email,
-        rol: user.rol,
-    };
+        const payload = {
+            sub: user.id,      // ← sub no id
+            email: user.email,
+            rol: user.rol,
+        };
 
-    const [accessToken, refreshToken] = await Promise.all([
-        this.jwtService.signAsync(payload, {
-            secret: process.env.JWT_SECRET,
-            expiresIn: process.env.NODE_ENV === 'production' ? '15m' : '2h',
-        }),
-        this.jwtService.signAsync(payload, {
-            secret: process.env.JWT_REFRESH_SECRET,
-            expiresIn: '30d',
-        }),
-    ]);
+        const [accessToken, refreshToken] = await Promise.all([
+            this.jwtService.signAsync(payload, {
+                secret: process.env.JWT_SECRET,
+                expiresIn: process.env.NODE_ENV === 'production' ? '15m' : '2h',
+            }),
+            this.jwtService.signAsync(payload, {
+                secret: process.env.JWT_REFRESH_SECRET,
+                expiresIn: '30d',
+            }),
+        ]);
 
-    return { accessToken, refreshToken };
-}
+        return { accessToken, refreshToken };
+    }
 
     private async saveRefreshToken(userId: string, refreshToken: string): Promise<void> {
         const hashed = await bcrypt.hash(refreshToken, 10);
@@ -134,7 +155,9 @@ export class AuthService {
         });
     }
 
-    async logout(userId: string, res: any): Promise<{ message: string }> {
+    
+
+    async logout(userId: string, res: Response): Promise<{ message: string }> {
     // Limpiamos el refresh token en DB
     await this.usersRepository.update(userId, {
         refreshToken: null,
@@ -142,13 +165,13 @@ export class AuthService {
     });
 
     // Limpiamos la cookie. Cast explícito para que TypeScript sepa qué es res
-    (res as Response).clearCookie('refresh_token', { path: '/auth/refresh' });
+    res.clearCookie('refresh_token', { path: '/auth/refresh' });
 
     return { message: 'Sesión cerrada correctamente' };
 }
 
 
-async refresh(refreshToken: string, res: any): Promise<{ accessToken: string }> {
+async refresh(refreshToken: string, res: Response): Promise<{ accessToken: string }> {
     if (!refreshToken) {
         throw new UnauthorizedException('No hay refresh token');
     }
@@ -185,7 +208,7 @@ async refresh(refreshToken: string, res: any): Promise<{ accessToken: string }> 
     const { accessToken, refreshToken: newRefreshToken } = await this.createTokens(user);
     await this.saveRefreshToken(user.id, newRefreshToken);
 
-    (res as Response).cookie('refresh_token', newRefreshToken, {
+    res.cookie('refresh_token', newRefreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -196,6 +219,25 @@ async refresh(refreshToken: string, res: any): Promise<{ accessToken: string }> 
     return { accessToken };
 }
 
+    async registerFromOrder(dto: RegisterFromOrderDto, res: Response) {
+        const order = await this.orderRepository.findOne({
+            where: { id: dto.orderId },
+            relations: ['user'],
+        })
+
+        if (!order) throw new NotFoundException('Orden no encontrada')
+        if (order.user) throw new BadRequestException('Esta orden ya está asociada a una cuenta')
+        if (order.guestEmail?.toLowerCase() !== dto.email.toLowerCase()) {
+            throw new ForbiddenException('El email no coincide con el de la orden')
+        }
+
+        const newUser = await this.createUser(dto)
+
+        order.user = newUser
+        await this.orderRepository.save(order)
+
+        return this.issueSession(newUser, res)
+    }
     
     
     }

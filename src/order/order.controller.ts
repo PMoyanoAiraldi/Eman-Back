@@ -188,4 +188,6 @@ export class OrderController {
         return this.orderService.generateShippingLabel(id);
     }
 
+    
+
 }

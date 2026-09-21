@@ -9,12 +9,14 @@ import { ConfigModule } from "@nestjs/config";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { UsersService } from "src/users/users.service";
 import { EmailService } from "src/email/email.service";
+import { Order } from "src/order/order.entity";
+
 
 
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Users]),
+        TypeOrmModule.forFeature([Users, Order]),
         PassportModule,
         JwtModule.register({
             secret: process.env.JWT_SECRET, // o process.env.JWT_SECRET
