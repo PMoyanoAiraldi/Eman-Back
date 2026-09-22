@@ -320,6 +320,7 @@ export class OrderService {
              // solo mandamos estos datos si es guest, para no exponerlos de más
             guestName: order.user ? undefined : order.guestName,
             guestEmail: order.user ? undefined : order.guestEmail,
+            guestPhone: order.user ? undefined : order.guestPhone, 
             total: displayTotal,
             catalogTotal: Number(order.total),
             shippingCost: order.shippingCost,
