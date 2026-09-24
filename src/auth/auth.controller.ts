@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 import { LoginUserDto } from "./dto/login-user.dto";
@@ -96,6 +96,15 @@ export class AuthController {
     ) {
         return await this.authService.registerFromOrder(dto, res)
     }
+
+    @Get('me')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Obtener los datos del usuario autenticado' })
+    async getMe(@Req() req: any) {
+        const userId = (req as Request & { user: { id: string } }).user.id;
+            return await this.authService.getMe(userId)
+}
 
 
 }

@@ -9,6 +9,7 @@ import { EmailService } from "src/email/email.service";
 import { ShippingService } from "src/shipping/shipping.service";
 import { CorreoArgentinoService } from "src/correo-argentino/correo-argentino.service";
 import { ConfigService } from '@nestjs/config';
+import { Users } from "src/users/users.entity";
 
 export interface OrderFilters {
     states?: stateEnum[];
@@ -25,10 +26,8 @@ export class OrderService {
     constructor(
         @InjectRepository(Order)
         private readonly orderRepository: Repository<Order>,
-        @InjectRepository(OrderDetail)
-        private orderDetailRepository: Repository<OrderDetail>,
-        @InjectRepository(ProductVariants)
-        private variantRepository: Repository<ProductVariants>,
+        @InjectRepository(Users)               
+        private readonly usersRepository: Repository<Users>,
         private dataSource: DataSource,
         private emailService: EmailService,
         private readonly shippingService: ShippingService,
@@ -301,6 +300,15 @@ export class OrderService {
             throw new ForbiddenException('No podés ver el detalle de esta orden')
         }
 
+         // Si es guest, chequeamos si ese email ya tiene cuenta en otro lado
+        let guestEmailHasAccount = false
+        if (!order.user && order.guestEmail) {
+            const existingUser = await this.usersRepository.findOne({
+                where: { email: order.guestEmail },
+                select: ['id'], // no necesitamos traer el resto de sus datos
+            })
+            guestEmailHasAccount = !!existingUser
+        }
 
         // Tomamos el pago más reciente (por si hubo reintentos)
         const lastPayment = order.payments?.length
@@ -317,6 +325,7 @@ export class OrderService {
             id: order.id,
             state: order.state,
             hasAccount: !!order.user, // si ya tiene user asociado, no mostrar CTA
+            guestEmailHasAccount,
              // solo mandamos estos datos si es guest, para no exponerlos de más
             guestName: order.user ? undefined : order.guestName,
             guestEmail: order.user ? undefined : order.guestEmail,

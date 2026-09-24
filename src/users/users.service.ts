@@ -7,6 +7,13 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { EmailService } from "src/email/email.service";
 
+//Pick utility type - Busca en Users las propiedades que le pasas y trae sus tipos sin que se los pongas
+export type SafeUser = Pick<Users,
+    'id' | 'name' | 'email' | 'streetName' | 'streetNumber' | 'floor' |
+    'apartment' | 'city' | 'provinceCode' | 'phone' | 'state' | 'rol'
+>;
+
+
 @Injectable()
 export class UsersService {
     constructor(
@@ -14,6 +21,29 @@ export class UsersService {
         private readonly usersRepository: Repository<Users>,
         private readonly emailService: EmailService
     ) { }
+
+    toSafeUser(user: Users): SafeUser {
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            streetName: user.streetName,
+            streetNumber: user.streetNumber,
+            floor: user.floor,
+            apartment: user.apartment,
+            city: user.city,
+            provinceCode: user.provinceCode,
+            phone: user.phone,
+            state: user.state,
+            rol: user.rol,
+        };
+    }
+    
+    async getSafeUserById(id: string): Promise<SafeUser> {
+        const user = await this.usersRepository.findOne({ where: { id } });
+        if (!user) throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+        return this.toSafeUser(user);
+    }
 
     async findAll(page: number, limit: number, state?: string, rol?: string, search?: string): Promise<
     {

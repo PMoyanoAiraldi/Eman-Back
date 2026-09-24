@@ -9,6 +9,7 @@ import { RegisterUserDto } from "./dto/register-user.dto";
 import type { Response } from 'express';
 import { Order } from "src/order/order.entity";
 import { RegisterFromOrderDto } from "./dto/register-from-order.dto";
+import { UsersService } from "src/users/users.service";
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
         @InjectRepository(Order) 
         private orderRepository: Repository<Order>,
+        private readonly usersService: UsersService,
         
     ) { }
 
@@ -239,5 +241,8 @@ async refresh(refreshToken: string, res: Response): Promise<{ accessToken: strin
         return this.issueSession(newUser, res)
     }
     
+    async getMe(userId: string) {
+        return this.usersService.getSafeUserById(userId)
+    }
     
     }
