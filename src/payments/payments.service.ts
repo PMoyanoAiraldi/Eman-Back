@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadGatewayException, Injectable, NotFoundException } from '@nestjs/common';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from '../order/order.entity';
@@ -100,7 +100,9 @@ export class PaymentsService {
         const payment = new Payment(this.client);
 
         console.log('Token recibido:', formData.token, 'Timestamp:', new Date().toISOString()) 
-        const result = await payment.create({
+        let result: Awaited<ReturnType<Payment['create']>>; 
+        try{
+            result = await payment.create({
             body: {
                 transaction_amount: Number(order.total), // importante: el monto sale de TU orden, no del formData del front (evita manipulación)
                 token: formData.token,
@@ -115,7 +117,14 @@ export class PaymentsService {
                 external_reference: orderId,
                 notification_url: `${process.env.BACKEND_URL}/payments/webhook`,
             },
-        });
+        })
+        } catch (error) {
+            console.error('Error al crear pago en MP:', error);
+            throw new BadGatewayException(
+                'No pudimos procesar el pago en este momento. Intentá de nuevo en unos minutos.',
+            );
+        }
+    
 
         console.log('MP result completo:', JSON.stringify(result, null, 2));
 
