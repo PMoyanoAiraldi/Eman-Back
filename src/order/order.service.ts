@@ -281,8 +281,47 @@ export class OrderService {
         return updatedOrder
     }
 
+    async uploadInvoice(orderId: string, file: Express.Multer.File): Promise<Order> {
+        if (!file) throw new BadRequestException('No se recibió ningún archivo');
+        if (file.mimetype !== 'application/pdf') {
+            throw new BadRequestException('La factura debe ser un archivo PDF');
+        }
 
-    
+        const order = await this.getOrderById(orderId);
+        const alreadySent = order.invoiceStatus === invoiceStatusEnum.ENVIADA;
+
+        const url = await this.cloudinaryService.uploadFile(file.buffer, 'invoices', file.originalname);
+        order.invoiceUrl = url;
+
+         // Si ya se había enviado una factura antes (ej: ahora sube una NC),
+        // NUNCA autoenviamos. Queda en "lista" esperando un click explícito.
+        if (alreadySent) {
+            order.invoiceStatus = invoiceStatusEnum.LISTA;
+            await this.orderRepository.save(order);
+            return order;
+        }
+
+        order.invoiceStatus = invoiceStatusEnum.LISTA;
+        await this.orderRepository.save(order);
+
+        const shouldSendNow =
+            order.shippingType === shippingTypeEnum.CORREO_ARGENTINO
+            ? !!order.trackingNumber
+            : [stateEnum.ENVIADO, stateEnum.ENTREGADO].includes(order.state);
+
+        // Si el pedido YA fue despachado, la mandamos ahora mismo aparte
+        if (shouldSendNow) {
+            const { invoiceSent } = await this.emailService.sendInvoiceEmail(order);
+            if (invoiceSent) {
+                order.invoiceStatus = invoiceStatusEnum.ENVIADA;
+                await this.orderRepository.save(order);
+            }
+        }
+
+        return order;
+    }
+
+
 
     async getOrderSummary(id: string, requesterId?: string) {
         const order = await this.orderRepository.findOne({
