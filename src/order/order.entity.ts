@@ -22,6 +22,12 @@ export enum DeliveryType {
     SUCURSAL = 'sucursal',
 }
 
+export enum invoiceStatusEnum {
+    PENDIENTE = 'pendiente',
+    LISTA = 'lista',
+    ENVIADA = 'enviada',
+}
+
 
 @Entity({ name: 'order' })
 export class Order {
@@ -127,6 +133,16 @@ export class Order {
 
     @Column({ type: 'varchar', length: 50, nullable: true })
     trackingNumber: string | null;
+
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    invoiceUrl: string | null;
+
+    @Column({
+        type: 'enum',
+        enum: invoiceStatusEnum,
+        default: invoiceStatusEnum.PENDIENTE,
+    })
+    invoiceStatus: invoiceStatusEnum;
 
     @ManyToOne(() => Users, (user) => user.orders, { nullable: true }) //para poder comprar sin registro del user
     @JoinColumn({ name: 'userId' })
