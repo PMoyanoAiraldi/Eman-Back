@@ -1,5 +1,5 @@
-import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
-import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
@@ -8,6 +8,7 @@ import { Roles } from "src/auth/decorators/roles.decorator";
 import { rolEnum, Users } from "src/users/users.entity";
 import { shippingTypeEnum, stateEnum } from "./order.entity";
 import { OptionalJwtAuthGuard } from "src/auth/guards/optional-jwt-auth.guard";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 interface RequestWithUser extends Request {
     user?: Users;
@@ -188,6 +189,25 @@ export class OrderController {
         return this.orderService.generateShippingLabel(id);
     }
 
-    
+    @Post(':id/invoice')
+    @ApiOperation({ summary: 'Subir factura de una orden y enviarla si ya fue despachada - Solo Admin' })
+    @ApiResponse({ status: 200, description: 'Factura subida (y enviada si correspondía)' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
+    @ApiSecurity('bearer')
+    @ApiConsumes('multipart/form-data')
+    @UseInterceptors(FileInterceptor('file'))
+    uploadInvoice(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+        return this.orderService.uploadInvoice(id, file);
+    }
+
+    @Post(':id/invoice/send')
+    @ApiOperation({ summary: 'Enviar por mail la factura ya subida (reenvío o NC) - Solo Admin' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
+    @ApiSecurity('bearer')
+    sendInvoiceManually(@Param('id') id: string) {
+        return this.orderService.sendInvoiceManually(id);
+    }
 
 }
