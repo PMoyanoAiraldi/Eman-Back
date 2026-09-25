@@ -49,15 +49,30 @@ export class EmailService {
 
     
 
-async sendDispatchNotification(order: Order) {
+async sendDispatchNotification(order: Order): Promise<{ invoiceSent: boolean }> {
     if (!order.guestEmail) {
         this.logger.warn(`Orden ${order.id} sin email, no se puede enviar notificación de despacho`);
-        return;
+        return { invoiceSent: false };
     }
 
     if (!order.trackingNumber) {
         this.logger.warn(`Orden ${order.id} marcada como enviada sin número de seguimiento, no se envía notificación`);
-        return;
+        return { invoiceSent: false };
+    }
+
+    let attachments: { filename: string; content: Buffer }[] | undefined;
+
+    if (order.invoiceUrl) {
+        try {
+            const res = await fetch(order.invoiceUrl);
+            const arrayBuffer = await res.arrayBuffer();
+            attachments = [{
+                filename: `Factura-${order.id.slice(0, 8)}.pdf`,
+                content: Buffer.from(arrayBuffer),
+            }];
+        } catch (err) {
+            this.logger.error(`No se pudo descargar la factura para adjuntarla en orden ${order.id}`, err);
+        }
     }
 
     try {
@@ -72,18 +87,22 @@ async sendDispatchNotification(order: Order) {
                     <p><strong>Número de orden:</strong> ${order.id}</p>
                     <p><strong>Número de seguimiento:</strong> ${order.trackingNumber}</p>
                     <p>Podés rastrear tu pedido en el <a href="https://www.correoargentino.com.ar/formularios/e-commerce" style="color: #C9A84C;">sitio de Correo Argentino</a> con ese número.</p>
+                    ${attachments ? '<p>Adjuntamos también la factura de tu compra.</p>' : ''}
                 </div>
             `,
+            ...(attachments ? { attachments } : {}),
         });
 
         if (response.error) {
             this.logger.error(`Resend rechazó el envío de despacho para orden ${order.id}: ${JSON.stringify(response.error)}`);
-            return;
+            return { invoiceSent: false };;
         }
 
-        this.logger.log(`Email de despacho enviado para orden ${order.id}`);
+        this.logger.log(`Email de despacho enviado para orden ${order.id}${attachments ? ' (con factura adjunta)' : ''}`);
+        return { invoiceSent: !!attachments };
     } catch (error) {
         this.logger.error(`Error enviando email de despacho para orden ${order.id}`, error);
+        return { invoiceSent: false };
     }
 }
 
