@@ -321,7 +321,20 @@ export class OrderService {
         return order;
     }
 
+    // Para el primer envío manual o para reenvíos/NC
+    async sendInvoiceManually(orderId: string): Promise<Order> {
+        const order = await this.getOrderById(orderId);
+        if (!order.invoiceUrl) {
+            throw new BadRequestException('Esta orden no tiene ninguna factura subida');
+        }
 
+        const { invoiceSent } = await this.emailService.sendInvoiceEmail(order);
+        if (invoiceSent) {
+            order.invoiceStatus = invoiceStatusEnum.ENVIADA;
+            await this.orderRepository.save(order);
+        }
+        return order;
+    }
 
     async getOrderSummary(id: string, requesterId?: string) {
         const order = await this.orderRepository.findOne({
