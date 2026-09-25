@@ -106,6 +106,49 @@ async sendDispatchNotification(order: Order): Promise<{ invoiceSent: boolean }> 
     }
 }
 
+// Para cuando la factura se sube DESPUÉS de que el pedido ya fue despachado
+async sendInvoiceEmail(order: Order): Promise<{ invoiceSent: boolean }> {
+    if (!order.guestEmail || !order.invoiceUrl) {
+        this.logger.warn(`Orden ${order.id} sin email o sin factura, no se puede enviar`);
+        return { invoiceSent: false };
+    }
+    try {
+        const res = await fetch(order.invoiceUrl);
+        const arrayBuffer = await res.arrayBuffer();
+
+        const response = await this.resend.emails.send({
+            from: FROM_EMAIL,
+            to: order.guestEmail,
+            subject: `Factura de tu pedido #${order.id.slice(0, 8)}`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+                    <h2 style="color: #C9A84C;">Tu factura</h2>
+                    <p>Hola ${order.guestName}, te adjuntamos la factura de tu pedido <strong>#${order.id.slice(0, 8)}</strong>.</p>
+                    <p>
+                        ¡Gracias por elegir Eman! Esperamos que disfrutes tu pedido
+                        y volver a verte pronto. 💛
+                    </p>
+                </div>
+            `,
+            attachments: [{
+                filename: `Factura-${order.id.slice(0, 8)}.pdf`,
+                content: Buffer.from(arrayBuffer),
+            }],
+        });
+        if (response.error) {
+            this.logger.error(`Resend rechazó el envío de factura para orden ${order.id}: ${JSON.stringify(response.error)}`);
+            return { invoiceSent: false };
+        }
+
+        this.logger.log(`Factura enviada para orden ${order.id}`);
+        return { invoiceSent: true };
+    } catch (error) {
+        this.logger.error(`Error enviando factura para orden ${order.id}`, error);
+        return { invoiceSent: false };
+    }
+}
+
+
 async sendPasswordResetEmail(email: string, resetUrl: string) {
     console.log('📧 Intentando enviar mail de reset a:', email)
     try {
