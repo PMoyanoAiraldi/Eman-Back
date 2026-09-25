@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { DeliveryType, Order, shippingTypeEnum, stateEnum } from "./order.entity";
+import { DeliveryType, invoiceStatusEnum, Order, shippingTypeEnum, stateEnum } from "./order.entity";
 import { DataSource, Repository } from "typeorm";
 import { OrderDetail } from "src/orderDetail/orderDetail.entity";
 import { ProductVariants } from "src/productVariants/productVariants.entity";
@@ -10,6 +10,7 @@ import { ShippingService } from "src/shipping/shipping.service";
 import { CorreoArgentinoService } from "src/correo-argentino/correo-argentino.service";
 import { ConfigService } from '@nestjs/config';
 import { Users } from "src/users/users.entity";
+import { CloudinaryService } from "src/file-upload/cloudinary.service";
 
 export interface OrderFilters {
     states?: stateEnum[];
@@ -32,6 +33,7 @@ export class OrderService {
         private emailService: EmailService,
         private readonly shippingService: ShippingService,
         private readonly correoArgentinoService: CorreoArgentinoService,
+        private readonly cloudinaryService: CloudinaryService,
         private readonly config: ConfigService
     ) { }
 
@@ -250,9 +252,7 @@ export class OrderService {
 
     async updateState(id: string, state: stateEnum, trackingNumber?: string): Promise<Order> {
         const order = await this.getOrderById(id)
-        if (
-        state === stateEnum.ENVIADO &&
-        order.shippingType === shippingTypeEnum.CORREO_ARGENTINO &&
+        if (state === stateEnum.ENVIADO && order.shippingType === shippingTypeEnum.CORREO_ARGENTINO &&
         !trackingNumber &&
         !order.trackingNumber
     ) {
@@ -271,11 +271,18 @@ export class OrderService {
         // Coordinado y Retiro se resuelven por WhatsApp / entrega en persona,
         // esos casos van directo a "Entregado" sin pasar por acá.
         if (state === stateEnum.ENVIADO && order.shippingType === shippingTypeEnum.CORREO_ARGENTINO) {
-            await this.emailService.sendDispatchNotification(order)
+            const { invoiceSent } = await this.emailService.sendDispatchNotification(order)
+            if (invoiceSent) {
+                order.invoiceStatus = invoiceStatusEnum.ENVIADA
+                await this.orderRepository.save(order)
+            }
         }
 
         return updatedOrder
     }
+
+
+    
 
     async getOrderSummary(id: string, requesterId?: string) {
         const order = await this.orderRepository.findOne({
