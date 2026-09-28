@@ -125,7 +125,7 @@ async sendInvoiceEmail(order: Order): Promise<{ invoiceSent: boolean }> {
                     <h2 style="color: #C9A84C;">Tu factura</h2>
                     <p>Hola ${order.guestName}, te adjuntamos la factura de tu pedido <strong>#${order.id.slice(0, 8)}</strong>.</p>
                     <p>
-                        ¡Gracias por elegir Eman! Esperamos que disfrutes tu pedido
+                        ¡Gracias por elegir Eman! Esperamos que disfrutes tu compra
                         y volver a verte pronto. 💛
                     </p>
                 </div>
