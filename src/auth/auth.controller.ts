@@ -6,6 +6,7 @@ import { RegisterUserDto } from "./dto/register-user.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import type { Request, Response} from 'express';
 import { RegisterFromOrderDto } from "./dto/register-from-order.dto";
+import type { RequestWithUser } from "./guards/roles.guard";
 
 @ApiTags("Auth")
 @Controller('auth')
@@ -105,6 +106,13 @@ export class AuthController {
         const userId = (req as Request & { user: { id: string } }).user.id;
             return await this.authService.getMe(userId)
 }
+
+    @Post('claim-order')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    claimOrder(@Req() req: RequestWithUser, @Body('orderId') orderId: string) {
+        return this.authService.claimOrder(req.user.id, orderId)
+    }
 
 
 }

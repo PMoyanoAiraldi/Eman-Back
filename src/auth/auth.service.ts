@@ -244,5 +244,28 @@ async refresh(refreshToken: string, res: Response): Promise<{ accessToken: strin
     async getMe(userId: string) {
         return this.usersService.getSafeUserById(userId)
     }
-    
+
+    async claimOrder(userId: string, orderId: string): Promise<{ linked: boolean }> {
+        const [user, order] = await Promise.all([
+            this.usersRepository.findOne({ where: { id: userId } }),
+            this.orderRepository.findOne({ where: { id: orderId }, relations: ['user'] }),
+        ])
+
+        if (!user) throw new UnauthorizedException('Usuario no encontrado')
+        if (!order) throw new NotFoundException('Orden no encontrada')
+
+        if (order.user) {
+            if (order.user.id === userId) return { linked: true } // ya era tuya
+            throw new BadRequestException('Esta orden ya está asociada a otra cuenta')
+        }
+
+        if (order.guestEmail?.toLowerCase() !== user.email.toLowerCase()) {
+            throw new ForbiddenException('El email de tu cuenta no coincide con el de la orden')
+        }
+
+        order.user = user
+        await this.orderRepository.save(order)
+        return { linked: true }
     }
+        
+}

@@ -423,6 +423,7 @@ export class OrderService {
                     status: lastPayment.status,
                     installments: lastPayment.installments,
                     installmentsAmount: lastPayment.installmentsAmount,
+                    amount: lastPayment.amount,
                     cardBrand: lastPayment.cardBrand,
                 } : null,
         }

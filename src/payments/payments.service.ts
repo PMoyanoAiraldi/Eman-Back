@@ -102,6 +102,7 @@ export class PaymentsService {
         console.log('Token recibido:', formData.token, 'Timestamp:', new Date().toISOString()) 
         let result: Awaited<ReturnType<Payment['create']>>; 
         try{
+            
             result = await payment.create({
             body: {
                 transaction_amount: Number(order.total), // importante: el monto sale de TU orden, no del formData del front (evita manipulación)
