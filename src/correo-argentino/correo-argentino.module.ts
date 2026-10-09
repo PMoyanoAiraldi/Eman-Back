@@ -4,7 +4,7 @@ import { CorreoArgentinoService } from './correo-argentino.service';
 
 
 @Module({
-    imports: [HttpModule],
+    imports: [HttpModule.register({ timeout: 8000 })],
     providers: [CorreoArgentinoService],
     exports: [CorreoArgentinoService],
 })

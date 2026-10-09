@@ -118,7 +118,16 @@ export interface CreateShipmentParams {
 
         return this.cachedToken;
         } catch (error: unknown) {
-            const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+            const axiosError = axios.isAxiosError(error) ? error : undefined;
+            const status = axiosError?.response?.status;
+            const data: unknown = axiosError?.response?.data;
+
+            console.error('Error en getToken:', {
+                status,
+                data,
+                code: axiosError?.code,
+                message: axiosError instanceof Error ? axiosError.message : error,
+            });
 
         if (status === 402) {
             throw new HttpException(
