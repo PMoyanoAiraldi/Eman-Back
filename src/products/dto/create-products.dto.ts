@@ -23,7 +23,7 @@ export class CreateProductDto {
 
     @IsOptional()
     @IsUUID()
-    brandId?: string;
+    brandId?: string | null;
 
     @IsUUID()
     categoryId: string;
@@ -39,5 +39,5 @@ export class CreateProductDto {
 
     @IsOptional()
     @IsUUID()
-    productTypeId: string;
+    productTypeId?: string | null;
 }

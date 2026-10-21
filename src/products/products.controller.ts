@@ -30,12 +30,13 @@ export class ProductsController {
         description: 'Datos para crear el producto',
         schema: {
             type: 'object',
-            required: ['name', 'description', 'price', 'categoryId', 'subcategoryId', 'productTypeId'],
+            required: ['name', 'description', 'price', 'categoryId', 'subcategoryId'],
             properties: {name: { type: 'string' },
                 description: { type: 'string' },
                 price: { type: 'number' },
                 gender: { type: 'string', enum: ['hombre', 'mujer', 'unisex'] },
                 isFeatured:{ type: 'boolean'},
+                weightGrams: { type: 'integer', minimum: 1, maximum: 25000 },
                 brandId: { type: 'string', nullable: true },
                 categoryId: { type: 'string' },
                 subcategoryId: { type: 'string' },
@@ -116,10 +117,10 @@ export class ProductsController {
                 price: { type: 'number' },
                 gender: { type: 'string', enum: ['hombre', 'mujer', 'unisex'] },
                 isFeatured: { type: 'boolean'},
-                brandId: { type: 'string' },
+                brandId: { type: 'string', nullable: true },
                 categoryId: { type: 'string' },
                 subcategoryId: { type: 'string' },
-                productTypeId: { type: 'string' },
+                productTypeId: { type: 'string', nullable: true },
             }
         }
     })

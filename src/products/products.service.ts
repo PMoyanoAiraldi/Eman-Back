@@ -56,8 +56,11 @@ export class ProductsService {
         const subcategory = await this.subCategoriesRepository.findOne({ where: { id: createProductDto.subcategoryId } });
         if (!subcategory) throw new NotFoundException('Subcategoría no encontrada');
 
-        const productType = await this.productTypesRepository.findOne({ where: { id: createProductDto.productTypeId } });
-        if (!productType) throw new NotFoundException('Tipo de producto no encontrado');
+        let productType: ProductTypes | null = null;
+        if (createProductDto.productTypeId) {
+            productType = await this.productTypesRepository.findOne({ where: { id: createProductDto.productTypeId } });
+            if (!productType) throw new NotFoundException('Tipo de producto no encontrado');
+        }
 
         const product = this.productRepository.create({
             name: createProductDto.name.trim(),
@@ -201,10 +204,14 @@ export class ProductsService {
             product.weightGrams = updateProductDto.weightGrams;
         }
 
-        if (updateProductDto.brandId) {
-            const brand = await this.brandsRepository.findOne({ where: { id: updateProductDto.brandId } });
-            if (!brand) throw new NotFoundException('Marca no encontrada');
-            product.brand = brand;
+        if (updateProductDto.brandId !== undefined) {
+            if (updateProductDto.brandId === null) {
+                product.brand = null; // "Sin marca"
+            } else {
+                const brand = await this.brandsRepository.findOne({ where: { id: updateProductDto.brandId } });
+                if (!brand) throw new NotFoundException('Marca no encontrada');
+                product.brand = brand;
+            }
         }
 
         if (updateProductDto.categoryId) {
@@ -219,10 +226,14 @@ export class ProductsService {
             product.subcategory = subcategory;
         }
 
-        if (updateProductDto.productTypeId) {
-            const productType = await this.productTypesRepository.findOne({ where: { id: updateProductDto.productTypeId } });
-            if (!productType) throw new NotFoundException('Tipo de producto no encontrado');
-            product.productType = productType;
+        if (updateProductDto.productTypeId !== undefined) {
+            if (updateProductDto.productTypeId === null) {
+                product.productType = null; // "Sin tipo"
+            } else {
+                const productType = await this.productTypesRepository.findOne({ where: { id: updateProductDto.productTypeId } });
+                if (!productType) throw new NotFoundException('Tipo de producto no encontrado');
+                product.productType = productType;
+            }
         }
 
         return this.productRepository.save(product);

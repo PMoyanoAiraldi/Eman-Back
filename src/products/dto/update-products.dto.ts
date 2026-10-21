@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID, Max, Min, ValidateIf } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 export class UpdateProductDto {
     @IsOptional()
@@ -28,9 +28,7 @@ export class UpdateProductDto {
     @IsOptional() // default 200 de la entity
     weightGrams?: number;
 
-    // Opcional en el negocio: puede no tener marca
     @IsOptional()
-    @ValidateIf((o: UpdateProductDto) => o.brandId !== null)
     @IsUUID()
     brandId?: string | null;
 
@@ -42,9 +40,7 @@ export class UpdateProductDto {
     @IsUUID()
     subcategoryId?: string;
 
-    // Opcional en el negocio: puede no tener tipo
     @IsOptional()
-    @ValidateIf((o: UpdateProductDto) => o.productTypeId !== null)
     @IsUUID()
     productTypeId?: string | null;
 
