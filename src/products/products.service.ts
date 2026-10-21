@@ -1,5 +1,5 @@
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, Not } from "typeorm";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Products } from "./products.entity";
 import { Brands } from "src/brands/brands.entity";
@@ -9,6 +9,7 @@ import { ProductTypes } from "src/productTypes/productTypes.entity";
 import { CreateProductDto } from "./dto/create-products.dto";
 import { UpdateProductDto } from "./dto/update-products.dto";
 
+const FEATURED_LIMIT = 4;
 
 @Injectable()
 export class ProductsService {
@@ -27,6 +28,10 @@ export class ProductsService {
     ) {}
 
     async createProduct(createProductDto: CreateProductDto): Promise<Products> {
+        if (createProductDto.isFeatured) {
+            await this.assertFeaturedLimit();
+        }
+
         // Verificar que no exista un producto con el mismo nombre
         const existing = await this.productRepository
             .createQueryBuilder('product')
@@ -68,6 +73,23 @@ export class ProductsService {
         });
         
         return await this.productRepository.save(product);
+    }
+
+        private async assertFeaturedLimit(excludeId?: string): Promise<void> {
+        const count = await this.productRepository.count({
+            where: {
+                isFeatured: true,
+                state: true,
+                isDraft: false,
+                ...(excludeId && { id: Not(excludeId) }),// excludeId no cuenta el product que se esta editando
+            },
+        });
+
+        if (count >= FEATURED_LIMIT) {
+            throw new BadRequestException(
+                `Ya hay ${FEATURED_LIMIT} productos destacados. Quitá uno para agregar este.`
+            );
+        }
     }
 
     async getAllProducts(): Promise<Products[]> {
@@ -168,6 +190,10 @@ export class ProductsService {
         if (updateProductDto.price) product.price = updateProductDto.price;
         if (updateProductDto.gender) product.gender = updateProductDto.gender;
         if (updateProductDto.isFeatured !== undefined) {
+            // Solo validar cuando pasa de no destacado a destacado
+            if (updateProductDto.isFeatured && !product.isFeatured) {
+                await this.assertFeaturedLimit(product.id);
+            }
             product.isFeatured = updateProductDto.isFeatured;
         }
 
@@ -204,6 +230,15 @@ export class ProductsService {
 
     async updateState(id: string, state: boolean): Promise<Products> {
         const product = await this.getProduct(id);
+
+        if (!state) {
+        // Un producto inactivo no puede quedar como destacado
+        product.isFeatured = false;
+        } else if (product.isFeatured) {
+            // Por si hay datos viejos: reactivar un destacado no puede pasar el límite
+            await this.assertFeaturedLimit(product.id);
+        }
+
         product.state = state;
         return this.productRepository.save(product);
     }
@@ -234,6 +269,9 @@ export class ProductsService {
             throw new BadRequestException(
                 `No se puede publicar: falta ${missing.join(', ')}.`
             );
+        }
+        if (product.isFeatured) {
+            await this.assertFeaturedLimit(product.id);
         }
 
         product.isDraft = false;
