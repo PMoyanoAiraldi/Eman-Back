@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from "@nestjs/swagger";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
@@ -117,6 +117,13 @@ export class OrderController {
     @ApiSecurity('bearer')
     findOne(@Param('id') id: string) {
         return this.orderService.getOrderById(id)
+    }
+
+    @Get(':id/status')
+    @ApiOperation({ summary: 'Estado público de una orden (para retomar el checkout)' })
+    async getOrderStatus(@Param('id', ParseUUIDPipe) id: string) {
+        const order = await this.orderService.getOrderById(id)
+        return { id: order.id, state: order.state, total: order.total }
     }
 
     @Patch(':id/state')
