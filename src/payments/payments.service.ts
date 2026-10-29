@@ -1,4 +1,4 @@
-import { BadGatewayException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from '../order/order.entity';
@@ -53,7 +53,12 @@ export class PaymentsService {
             where: { id: orderId },
             relations: ['orderDetail']
             })
-        if (!order) throw new NotFoundException(`Orden ${orderId} no encontrada`)
+            
+            if (!order) throw new NotFoundException(`Orden ${orderId} no encontrada`)
+        
+            if (order.state !== stateEnum.PENDIENTE) {
+                throw new BadRequestException('La orden ya no está pendiente')
+            }
 
         // 2. Crear la preferencia en MercadoPago
         const preference = new Preference(this.client);
@@ -87,19 +92,22 @@ export class PaymentsService {
                 notification_url: `${process.env.BACKEND_URL}/payments/webhook`,
             }
         });
-        console.log(JSON.stringify(response.payment_methods, null, 2));
 
         return { preferenceId: response.id, initPoint: response.init_point }
     }
 
     async processPayment(formData: PaymentFormData, orderId: string) {
         const order = await this.orderRepository.findOne({ where: { id: orderId } });
+        
         if (!order) throw new NotFoundException(`Orden ${orderId} no encontrada`);
+        console.log('processPayment: estado de la orden =', order.state)
 
+        if (order.state !== stateEnum.PENDIENTE) {
+            throw new BadRequestException('Tu pedido venció. Volvé a armarlo para continuar.')
+        }
         
         const payment = new Payment(this.client);
 
-        console.log('Token recibido:', formData.token, 'Timestamp:', new Date().toISOString()) 
         let result: Awaited<ReturnType<Payment['create']>>; 
         try{
             
@@ -148,22 +156,7 @@ export class PaymentsService {
         await this.paymentsRepository.save(paymentRecord);
 
         // Actualizamos el estado de la orden según lo que respondió MP
-        if (result.status === 'approved') {
-            await this.orderRepository.update(orderId, { state: stateEnum.CONFIRMADO });
-
-            if (!order.confirmationEmailSentAt) {
-                await this.emailService.sendPaymentConfirmation(order);
-                await this.orderRepository.update(orderId, { confirmationEmailSentAt: new Date() });
-            }
-        } else if (result.status === 'rejected') {
-            await this.restoreStockAndCancel(orderId); //repone el stock
-            await this.emailService.sendPaymentRejection(order); //avisa al cliente
-        } else if (result.status === 'in_process') {
-            await this.emailService.sendPaymentUnderReview(order);//avisa que esta en revision
-        }
-        // Si es 'in_process', lo dejamos como está (pendiente) — lo resuelve el webhook después
-
-        return {
+    const response = {
             status: result.status,            // 'approved' | 'rejected' | 'in_process'
             statusDetail: result.status_detail,
             paymentId: result.id,
@@ -171,16 +164,43 @@ export class PaymentsService {
             installments: result.installments,
             installmentsAmount: result.transaction_details?.installment_amount,
         };
-    }
 
+    if (result.status === 'approved') {
+        // solo confirma si la orden sigue pendiente (evita la carrera con el cron)
+        const updated = await this.orderRepository.update(
+            { id: orderId, state: stateEnum.PENDIENTE },
+            { state: stateEnum.CONFIRMADO },
+        );
+
+        if (updated.affected === 0) {
+            // la orden se canceló mientras se procesaba el pago: el stock ya se devolvió
+            await this.emailService.sendAdminLatePaymentAlert(order, String(result.id));
+            await this.emailService.sendPaymentApprovedNeedsContact(order);
+            return response
+        }
+
+    if (!order.confirmationEmailSentAt) {
+        await this.emailService.sendPaymentConfirmation(order);
+        await this.orderRepository.update(orderId, { confirmationEmailSentAt: new Date() });
+    }
+    } else if (result.status === 'rejected') {
+            await this.restoreStockAndCancel(orderId); // repone el stock
+            await this.emailService.sendPaymentRejection(order); // avisa al cliente
+        } else if (result.status === 'in_process') {
+            await this.emailService.sendPaymentUnderReview(order); // avisa que está en revisión
+        }
+        // Si es 'in_process', la orden queda pendiente: la resuelve el webhook después
+
+        return response;
+
+    }
 
     @Cron(CronExpression.EVERY_MINUTE)
     async cancelStaleOrders() {
-        const limiteSinPago = new Date();
-        limiteSinPago.setHours(limiteSinPago.getHours() - 24);
+        // const limiteSinPago = new Date(Date.now() - 60 * 60 * 1000)          // 60 min
+        const limiteSinPago = new Date(Date.now() - 2 * 60 * 1000)
 
-        const limiteEnRevision = new Date();
-        limiteEnRevision.setMinutes(limiteEnRevision.getMinutes() - 2);
+        const limiteEnRevision = new Date(Date.now() - 72 * 60 * 60 * 1000) // 72 hs
 
         // Caso 1: nunca hubo ni un intento de pago (carrito abandonado)
         const sinPago = await this.orderRepository
@@ -312,7 +332,7 @@ export class PaymentsService {
             where: { id: orderId },
             relations: ['orderDetail', 'orderDetail.variant'],
         });
-        if (!order) return;
+        if (!order || order.state === stateEnum.CANCELADO) return;
 
         await this.dataSource.transaction(async (manager) => {
             for (const detail of order.orderDetail) {
