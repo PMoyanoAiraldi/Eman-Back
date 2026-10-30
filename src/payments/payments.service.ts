@@ -100,7 +100,7 @@ export class PaymentsService {
         const order = await this.orderRepository.findOne({ where: { id: orderId } });
         
         if (!order) throw new NotFoundException(`Orden ${orderId} no encontrada`);
-        console.log('processPayment: estado de la orden =', order.state)
+        
 
         if (order.state !== stateEnum.PENDIENTE) {
             throw new BadRequestException('Tu pedido venció. Volvé a armarlo para continuar.')
@@ -197,8 +197,8 @@ export class PaymentsService {
 
     @Cron(CronExpression.EVERY_MINUTE)
     async cancelStaleOrders() {
-        // const limiteSinPago = new Date(Date.now() - 60 * 60 * 1000)          // 60 min
-        const limiteSinPago = new Date(Date.now() - 2 * 60 * 1000)
+        const limiteSinPago = new Date(Date.now() - 60 * 60 * 1000)          // 60 min
+        //const limiteSinPago = new Date(Date.now() - 2 * 60 * 1000)
 
         const limiteEnRevision = new Date(Date.now() - 72 * 60 * 60 * 1000) // 72 hs
 
