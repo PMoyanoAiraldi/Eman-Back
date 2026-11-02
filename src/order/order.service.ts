@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { DeliveryType, invoiceStatusEnum, Order, shippingTypeEnum, stateEnum } from "./order.entity";
+import { cancelReasonEnum, DeliveryType, invoiceStatusEnum, Order, shippingTypeEnum, stateEnum } from "./order.entity";
 import { DataSource, Repository } from "typeorm";
 import { OrderDetail } from "src/orderDetail/orderDetail.entity";
 import { ProductVariants } from "src/productVariants/productVariants.entity";
@@ -499,7 +499,10 @@ async cancelOrder(id: string): Promise<{ message: string }> {
                 await manager.save(ProductVariants, variant);
             }
         }
-        await manager.update(Order, order.id, { state: stateEnum.CANCELADO });
+        await manager.update(Order, order.id, { 
+            state: stateEnum.CANCELADO,
+            cancelReason: cancelReasonEnum.CANCELADA_POR_CLIENTE,
+        });
     });
 
     return { message: 'Orden cancelada y stock repuesto' };

@@ -28,6 +28,14 @@ export enum invoiceStatusEnum {
     ENVIADA = 'enviada',
 }
 
+export enum cancelReasonEnum {
+    ABANDONADA = 'abandonada',                     // venció sin intento de pago
+    RECHAZADA = 'rechazada',                       // MP rechazó el pago
+    CANCELADA_POR_CLIENTE = 'cancelada_por_cliente', // apretó "Volver"
+    VENCIDA_EN_REVISION = 'vencida_en_revision',   // pasaron 72 hs en revisión
+    CANCELADA_POR_ADMIN = 'cancelada_por_admin',   // cambiada a mano desde el panel
+}
+
 
 @Entity({ name: 'order' })
 export class Order {
@@ -143,6 +151,9 @@ export class Order {
         default: invoiceStatusEnum.PENDIENTE,
     })
     invoiceStatus: invoiceStatusEnum;
+
+    @Column({ type: 'enum', enum: cancelReasonEnum, nullable: true })
+    cancelReason: cancelReasonEnum | null;
 
     @ManyToOne(() => Users, (user) => user.orders, { nullable: true }) //para poder comprar sin registro del user
     @JoinColumn({ name: 'userId' })

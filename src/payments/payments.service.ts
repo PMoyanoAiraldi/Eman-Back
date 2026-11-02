@@ -1,7 +1,7 @@
 import { BadGatewayException, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Order } from '../order/order.entity';
+import { cancelReasonEnum, Order } from '../order/order.entity';
 import { DataSource, Repository } from 'typeorm';
 import { Payment } from 'mercadopago';
 import { PaymentFormData, MercadoPagoWebhookQuery, MercadoPagoWebhookBody } from './payments.types';
@@ -184,7 +184,7 @@ export class PaymentsService {
         await this.orderRepository.update(orderId, { confirmationEmailSentAt: new Date() });
     }
     } else if (result.status === 'rejected') {
-            await this.restoreStockAndCancel(orderId); // repone el stock
+            await this.restoreStockAndCancel(orderId, cancelReasonEnum.RECHAZADA); // repone el stock
             await this.emailService.sendPaymentRejection(order); // avisa al cliente
         } else if (result.status === 'in_process') {
             await this.emailService.sendPaymentUnderReview(order); // avisa que está en revisión
@@ -223,12 +223,12 @@ export class PaymentsService {
         const vencidas = [...sinPago, ...enRevision];
 
         for (const order of sinPago) {
-            await this.restoreStockAndCancel(order.id)
+            await this.restoreStockAndCancel(order.id, cancelReasonEnum.ABANDONADA)
                 
         }
 
         for (const order of enRevision) {
-            await this.restoreStockAndCancel(order.id);
+            await this.restoreStockAndCancel(order.id, cancelReasonEnum.VENCIDA_EN_REVISION);
             await this.emailService.sendAdminReviewTimeoutAlert(order);
             await this.emailService.sendPaymentTimeoutNotice(order);
         }
@@ -317,7 +317,7 @@ export class PaymentsService {
             if (wasAlreadyCancelled) { // ya fue cancelada? antes de tocar stock
                 return { received: true }; // si es si
             }
-            await this.restoreStockAndCancel(orderId); // repone stock
+            await this.restoreStockAndCancel(orderId, cancelReasonEnum.RECHAZADA); // repone stock
             await this.emailService.sendPaymentRejection(order); //al cliente se envia "pago rechazado"
             if (wasPending) {
                 await this.emailService.sendAdminOrderRejectedAfterReview(order);
@@ -327,7 +327,7 @@ export class PaymentsService {
         return { received: true };
     }
 
-    private async restoreStockAndCancel(orderId: string) {
+    private async restoreStockAndCancel(orderId: string,  reason: cancelReasonEnum) {
         const order = await this.orderRepository.findOne({
             where: { id: orderId },
             relations: ['orderDetail', 'orderDetail.variant'],
@@ -344,7 +344,10 @@ export class PaymentsService {
                     await manager.save(ProductVariants, variant);
                 }
             }
-            await manager.update(Order, order.id, { state: stateEnum.CANCELADO });
+            await manager.update(Order, order.id, { 
+                state: stateEnum.CANCELADO,
+                cancelReason: reason, 
+            });
         });
     }
 }
