@@ -250,14 +250,49 @@ export class OrderService {
         })
     }
 
+
+    private async cancelByAdmin(order: Order): Promise<Order> {
+        if (![stateEnum.PENDIENTE, stateEnum.CONFIRMADO].includes(order.state)) {
+            throw new BadRequestException('Solo se pueden cancelar órdenes pendientes o confirmadas. Si ya se envió, gestionalo por fuera.')
+        }
+
+        await this.dataSource.transaction(async (manager) => {
+            for (const detail of order.orderDetail) {
+                const variant = await manager.findOne(ProductVariants, {
+                    where: { id: detail.variant.id },
+                })
+                if (variant) {
+                    variant.stock += detail.quantity
+                    await manager.save(ProductVariants, variant)
+                }
+            }
+            await manager.update(Order, order.id, {
+                state: stateEnum.CANCELADO,
+                cancelReason: cancelReasonEnum.CANCELADA_POR_ADMIN,
+            })
+        })
+
+        return this.getOrderById(order.id)
+    }
+
     async updateState(id: string, state: stateEnum, trackingNumber?: string): Promise<Order> {
         const order = await this.getOrderById(id)
+
+        if (order.state === stateEnum.CANCELADO) {
+        if (state === stateEnum.CANCELADO) return order
+        throw new BadRequestException('Una orden cancelada no se puede reactivar. Si hace falta, generá una nueva.')
+        }
+
+        if (state === stateEnum.CANCELADO) {
+            return this.cancelByAdmin(order)
+        }
+        
         if (state === stateEnum.ENVIADO && order.shippingType === shippingTypeEnum.CORREO_ARGENTINO &&
-        !trackingNumber &&
-        !order.trackingNumber
-    ) {
-        throw new BadRequestException('Necesitás cargar el número de seguimiento para marcar este pedido como enviado');
-    }
+            !trackingNumber &&
+            !order.trackingNumber
+        ) {
+            throw new BadRequestException('Necesitás cargar el número de seguimiento para marcar este pedido como enviado');
+        }
 
         order.state = state 
 
