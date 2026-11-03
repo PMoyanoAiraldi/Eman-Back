@@ -1,0 +1,1 @@
+export const LOCAL_ZIP_CODES = ['2255'] 

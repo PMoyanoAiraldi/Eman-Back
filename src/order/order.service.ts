@@ -11,6 +11,7 @@ import { CorreoArgentinoService } from "src/correo-argentino/correo-argentino.se
 import { ConfigService } from '@nestjs/config';
 import { Users } from "src/users/users.entity";
 import { CloudinaryService } from "src/file-upload/cloudinary.service";
+import { LOCAL_ZIP_CODES } from "src/shipping/shipping.constants";
 
 export interface OrderFilters {
     states?: stateEnum[];
@@ -71,6 +72,13 @@ export class OrderService {
         let shippingCost = 0 // default: Coordinado/Retiro
 
         if (createOrderDto.shippingType === shippingTypeEnum.CORREO_ARGENTINO) {
+            if (LOCAL_ZIP_CODES.includes(createOrderDto.zipCode)) {
+                throw new BadRequestException(
+                    'Para tu zona el envío es coordinado o retiro en el local.'
+                )
+            }
+
+
             const pkg = await this.shippingService.calculatePackage(
                 createOrderDto.items.map(item => ({
                     productId: item.productId,
