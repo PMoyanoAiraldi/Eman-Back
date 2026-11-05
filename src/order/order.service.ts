@@ -12,6 +12,8 @@ import { ConfigService } from '@nestjs/config';
 import { Users } from "src/users/users.entity";
 import { CloudinaryService } from "src/file-upload/cloudinary.service";
 import { LOCAL_ZIP_CODES } from "src/shipping/shipping.constants";
+import { randomBytes } from "crypto";
+import { CreateWithdrawalDto } from "./dto/create-withdrawal.dto";
 
 export interface OrderFilters {
     states?: stateEnum[];
@@ -304,9 +306,13 @@ export class OrderService {
 
         order.state = state 
 
+        if (state === stateEnum.ENTREGADO && !order.deliveredAt) {
+            order.deliveredAt = new Date()
+        }
+
         if (trackingNumber) {
-        order.trackingNumber = trackingNumber
-    }
+            order.trackingNumber = trackingNumber
+        }
         
         const updatedOrder = await this.orderRepository.save(order)
 
@@ -550,5 +556,65 @@ async cancelOrder(id: string): Promise<{ message: string }> {
 
     return { message: 'Orden cancelada y stock repuesto' };
 }
+
+async requestWithdrawal(dto: CreateWithdrawalDto): Promise<{ code: string; alreadyRequested: boolean }> {
+    const ref = dto.orderNumber.replace('#', '').trim().toLowerCase();
+    const email = dto.email.trim().toLowerCase();
+
+    // Defensa extra por si el ValidationPipe no está activo: el ref va dentro de un LIKE
+    if (!/^[0-9a-f-]{8,36}$/.test(ref)) {
+        throw new BadRequestException('El número de pedido no es válido');
+    }
+
+    // 1. Buscar el pedido por los primeros caracteres del ID Y por email
+    const order = await this.orderRepository
+        .createQueryBuilder('order')
+        .where('CAST(order.id AS text) LIKE :ref', { ref: `${ref}%` })
+        .andWhere('LOWER(order.guestEmail) = :email', { email })
+        .orderBy('order.createdAt', 'DESC')
+        .getOne();
+
+    if (!order) {
+        throw new NotFoundException('No encontramos un pedido con esos datos. Revisá el número y el email de tu compra.');
+    }
+
+    // 2. Solo pedidos con pago confirmado
+    const allowed = [stateEnum.CONFIRMADO, stateEnum.ENVIADO, stateEnum.ENTREGADO];
+    if (!allowed.includes(order.state)) {
+        throw new BadRequestException('Este pedido no tiene un pago confirmado o fue cancelado, por lo que no hay nada para devolver.');
+    }
+
+    // 3. Si ya la pidió, devolvemos el mismo código
+    if (order.withdrawalCode) {
+        return { code: order.withdrawalCode, alreadyRequested: true };
+    }
+
+    // 4. ¿Pasaron más de 10 días desde la entrega? (solo informativo)
+    let outOfTerm = false;
+    if (order.deliveredAt) {
+        const limit = new Date(order.deliveredAt);
+        limit.setDate(limit.getDate() + 10);
+        limit.setHours(23, 59, 59, 999);
+        outOfTerm = new Date() > limit;
+    }
+
+    // 5. Guardar
+    const code = 'ARR-' + randomBytes(4).toString('hex').toUpperCase();
+    const note = dto.note?.trim() || null;
+
+    order.withdrawalCode = code;
+    order.withdrawalRequestedAt = new Date();
+    order.withdrawalNote = note;
+    order.withdrawalOutOfTerm = outOfTerm;
+    await this.orderRepository.save(order);
+
+    // 6. Mails (EmailService atrapa sus errores: un mail caído no rompe la solicitud)
+    await Promise.all([
+        this.emailService.sendWithdrawalConfirmation(order, code),
+        this.emailService.sendAdminWithdrawalRequest(order, code, outOfTerm, note),
+    ]);
+
+    return { code, alreadyRequested: false };
+    }   
 }
 

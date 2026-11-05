@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Resend } from 'resend';
-import { Order } from '../order/order.entity'; 
+import { Order, stateEnum } from '../order/order.entity'; 
 
 const FROM_EMAIL = 'Eman <onboarding@resend.dev>'; // cambiar a info@eman.com.ar cuando lo declare en resend
 
@@ -424,5 +424,70 @@ async sendPaymentApprovedNeedsContact(order: Order) {
         }
 }
 
+async sendWithdrawalConfirmation(order: Order, code: string) {
+    if (!order.guestEmail) {
+        this.logger.warn(`Orden ${order.id} sin email, no se puede enviar el código de arrepentimiento`);
+        return;
+    }
+    try {
+        const response = await this.resend.emails.send({
+            from: FROM_EMAIL,
+            to: order.guestEmail,
+            subject: `Recibimos tu solicitud de arrepentimiento — código ${code}`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+                    <h2 style="color: #C9A84C;">Recibimos tu solicitud</h2>
+                    <p>Hola ${order.guestName}, registramos tu solicitud de arrepentimiento para el pedido <strong>#${order.id.slice(0, 8)}</strong>.</p>
+                    <p><strong>Código de identificación:</strong> ${code}</p>
+                    <p>Nos vamos a comunicar con vos para coordinar la devolución. El costo del envío de devolución está a cargo de Eman.</p>
+                    <p>Guardá este código por cualquier consulta.</p>
+                </div>
+            `,
+        });
+        if (response.error) {
+            this.logger.error(`Resend rechazó el código de arrepentimiento para orden ${order.id}: ${JSON.stringify(response.error)}`);
+            return;
+        }
+        this.logger.log(`Código de arrepentimiento enviado para orden ${order.id}`);
+    } catch (error) {
+        this.logger.error(`Error enviando código de arrepentimiento para orden ${order.id}`, error);
+    }
+}
+
+async sendAdminWithdrawalRequest(order: Order, code: string, outOfTerm: boolean, note?: string | null) {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) {
+        this.logger.warn('ADMIN_EMAIL no configurado, no se puede avisar a Andrea del arrepentimiento');
+        return;
+    }
+    const safeNote = note ? note.replace(/</g, '&lt;').replace(/>/g, '&gt;') : null;
+    try {
+        const response = await this.resend.emails.send({
+            from: FROM_EMAIL,
+            to: adminEmail,
+            subject: `Arrepentimiento ${code} — pedido #${order.id.slice(0, 8)}`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+                    <h2 style="color: #C9A84C;">Nueva solicitud de arrepentimiento</h2>
+                    <p><strong>Código:</strong> ${code}</p>
+                    <p><strong>Pedido:</strong> #${order.id.slice(0, 8)} (estado: ${order.state})</p>
+                    <p><strong>Cliente:</strong> ${order.guestName} — ${order.guestEmail}${order.guestPhone ? ` — ${order.guestPhone}` : ''}</p>
+                    ${order.deliveredAt ? `<p><strong>Entregado el:</strong> ${order.deliveredAt.toLocaleDateString('es-AR')}</p>` : ''}
+                    ${outOfTerm ? '<p style="color: #b00020;"><strong>⚠️ Pasaron más de 10 días desde la entrega registrada.</strong> Revisá la fecha real de recepción antes de responder.</p>' : ''}
+                    ${safeNote ? `<p><strong>Prendas a devolver:</strong> ${safeNote}</p>` : '<p>No especificó prendas: asumí el pedido completo y confirmalo con la clienta.</p>'}
+                    ${order.state === stateEnum.CONFIRMADO ? '<p>El pedido figura como no enviado: si todavía no lo despachaste, cancelalo desde el panel y reintegrá el pago.</p>' : ''}
+                    <p>Contactá a la clienta, coordiná la devolución (el envío corre por cuenta de Eman) y reintegrá el pago por el mismo medio cuando recibas la prenda.</p>
+                </div>
+            `,
+        });
+        if (response.error) {
+            this.logger.error(`Resend rechazó el aviso de arrepentimiento para orden ${order.id}: ${JSON.stringify(response.error)}`);
+            return;
+        }
+        this.logger.log(`Aviso de arrepentimiento enviado a Andrea para orden ${order.id}`);
+    } catch (error) {
+        this.logger.error(`Error enviando aviso de arrepentimiento para orden ${order.id}`, error);
+    }
+}
 
 }

@@ -155,6 +155,21 @@ export class Order {
     @Column({ type: 'enum', enum: cancelReasonEnum, nullable: true })
     cancelReason: cancelReasonEnum | null;
 
+    @Column({ type: 'timestamp', nullable: true })
+    deliveredAt: Date | null;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    withdrawalCode: string | null;
+
+    @Column({ type: 'timestamp', nullable: true })
+    withdrawalRequestedAt: Date | null;
+
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    withdrawalNote: string | null;
+
+    @Column({ type: 'boolean', default: false })
+    withdrawalOutOfTerm: boolean;
+
     @ManyToOne(() => Users, (user) => user.orders, { nullable: true }) //para poder comprar sin registro del user
     @JoinColumn({ name: 'userId' })
     user: Users | null;

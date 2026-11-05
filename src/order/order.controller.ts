@@ -9,6 +9,7 @@ import { rolEnum, Users } from "src/users/users.entity";
 import { shippingTypeEnum, stateEnum } from "./order.entity";
 import { OptionalJwtAuthGuard } from "src/auth/guards/optional-jwt-auth.guard";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { CreateWithdrawalDto } from "./dto/create-withdrawal.dto";
 
 interface RequestWithUser extends Request {
     user?: Users;
@@ -71,6 +72,15 @@ export class OrderController {
         console.log('req.user:', req.user);
         const userId = req.user?.id ?? null;
         return this.orderService.createOrder(createOrderDto, userId)
+    }
+
+    @Post('withdrawal')
+    @HttpCode(HttpStatus.CREATED)
+    @ApiOperation({ summary: 'Botón de arrepentimiento - Público (sin login)' })
+    @ApiResponse({ status: 201, description: 'Solicitud registrada' })
+    @ApiResponse({ status: 404, description: 'Pedido no encontrado o email no coincide' })
+    requestWithdrawal(@Body() dto: CreateWithdrawalDto) {
+        return this.orderService.requestWithdrawal(dto);
     }
 
     @Get()
