@@ -471,7 +471,9 @@ async sendAdminWithdrawalRequest(order: Order, code: string, outOfTerm: boolean,
                     <h2 style="color: #C9A84C;">Nueva solicitud de arrepentimiento</h2>
                     <p><strong>Código:</strong> ${code}</p>
                     <p><strong>Pedido:</strong> #${order.id.slice(0, 8)} (estado: ${order.state})</p>
-                    <p><strong>Cliente:</strong> ${order.guestName} — ${order.guestEmail}${order.guestPhone ? ` — ${order.guestPhone}` : ''}</p>
+                    <p><strong>Nombre:</strong> ${order.guestName}</p>
+                    <p><strong>Email:</strong> ${order.guestEmail}</p>
+                    <p><strong>Celular:</strong> ${order.guestPhone ?? '—'}</p>
                     ${order.deliveredAt ? `<p><strong>Entregado el:</strong> ${order.deliveredAt.toLocaleDateString('es-AR')}</p>` : ''}
                     ${outOfTerm ? '<p style="color: #b00020;"><strong>⚠️ Pasaron más de 10 días desde la entrega registrada.</strong> Revisá la fecha real de recepción antes de responder.</p>' : ''}
                     ${safeNote ? `<p><strong>Prendas a devolver:</strong> ${safeNote}</p>` : '<p>No especificó prendas: asumí el pedido completo y confirmalo con la clienta.</p>'}
