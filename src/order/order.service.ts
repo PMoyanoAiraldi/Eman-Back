@@ -22,6 +22,7 @@ export interface OrderFilters {
     dateFrom?: string;
     dateTo?: string;
     search?: string;
+    withdrawal?: boolean;
 }
 
 
@@ -238,6 +239,10 @@ export class OrderService {
         query.andWhere('(order.guestName ILIKE :search OR order.guestEmail ILIKE :search)', {
             search: `%${filters.search}%`,
         });
+    }
+
+    if (filters.withdrawal) {
+        query.andWhere('order.withdrawalRequestedAt IS NOT NULL');
     }
 
     return query.getMany();

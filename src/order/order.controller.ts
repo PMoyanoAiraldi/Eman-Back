@@ -96,6 +96,7 @@ export class OrderController {
         @Query('dateFrom') dateFrom?: string,
         @Query('dateTo') dateTo?: string,
         @Query('search') search?: string,
+        @Query('withdrawal') withdrawal?: boolean
     ) {
         return this.orderService.getAllOrders({
             states: state ? (state.split(',') as stateEnum[]) : undefined,
@@ -104,6 +105,7 @@ export class OrderController {
             dateFrom,
             dateTo,
             search,
+            withdrawal
         })
     }
 
