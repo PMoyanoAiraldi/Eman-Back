@@ -2,7 +2,8 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import axios from 'axios';
+import axios, { AxiosRequestConfig} from 'axios';
+import * as https from 'https';
 
 interface TokenResponse {
     token: string;
@@ -142,6 +143,26 @@ export interface CreateShipmentParams {
         }
     }
 
+    private readonly httpsAgent = new https.Agent({ keepAlive: false }); //keepAlive: false - en cada intento usa una conexion nueva
+
+    private async postWithRetry<T>(url: string, body: unknown, config: AxiosRequestConfig, maxRetries = 2) {
+        const finalConfig: AxiosRequestConfig = { ...config, httpsAgent: this.httpsAgent, timeout: 15000 };
+
+        for (let attempt = 0; ; attempt++) {
+            try {
+                return await firstValueFrom(this.http.post<T>(url, body, finalConfig));
+            } catch (error) {
+                const code = axios.isAxiosError(error) && !error.response ? error.code : undefined;
+                const transient = !!code && ['ECONNRESET', 'ETIMEDOUT', 'ECONNABORTED', 'EPIPE'].includes(code);
+
+                if (!transient || attempt >= maxRetries) throw error;
+
+                console.warn(`${code}, reintento ${attempt + 1}/${maxRetries}`);
+                await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+            }
+        }
+}
+
     async getRates(params: {
         postalCodeOrigin: string;
         postalCodeDestination: string;
@@ -156,8 +177,7 @@ export interface CreateShipmentParams {
     
 
         try {
-        const response = await firstValueFrom(
-            this.http.post<{ rates: RateItem[] }>(
+        const response = await this.postWithRetry<{ rates: RateItem[] }>(
             `${this.baseUrl}/rates`,
             {
                 customerId,
@@ -165,19 +185,28 @@ export interface CreateShipmentParams {
                 postalCodeDestination: params.postalCodeDestination,
                 deliveredType: params.deliveredType,
                 dimensions: {
-                weight: params.weight,
-                height: params.height,
-                width: params.width,
-                length: params.length,
+                    weight: params.weight,
+                    height: params.height,
+                    width: params.width,
+                    length: params.length,
                 },
             },
             { headers: { Authorization: `Bearer ${token}` } },
-            ),
         );
 
         return response.data.rates;
         } catch (error: unknown) {
-            console.error('Error en getRates:', axios.isAxiosError(error) ? error.response?.data : error);
+            if (axios.isAxiosError(error)) {
+        console.error('Error en getRates:', {
+            message: error.message,
+            code: error.code,          // ECONNABORTED, ENOTFOUND, ECONNREFUSED, etc.
+            status: error.response?.status,
+           // data: error.response?.data,
+            url: error.config?.url,
+        });
+    } else {
+        console.error('Error en getRates (no es de Axios):', error);
+    }
             const status = axios.isAxiosError(error) ? error.response?.status : undefined;
             if (status === 402) {
                 throw new HttpException(
