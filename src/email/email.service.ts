@@ -492,4 +492,29 @@ async sendAdminWithdrawalRequest(order: Order, code: string, outOfTerm: boolean,
     }
 }
 
+async sendWithdrawalRejected(order: Order, reason: string) {
+    if (!order.guestEmail) return;
+    const safeReason = reason.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    try {
+        const response = await this.resend.emails.send({
+            from: FROM_EMAIL,
+            to: order.guestEmail,
+            subject: `Novedades sobre tu solicitud de arrepentimiento ${order.withdrawalCode}`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
+                    <h2 style="color: #C9A84C;">Respuesta a tu solicitud</h2>
+                    <p>Hola ${order.guestName}, revisamos tu solicitud de arrepentimiento del pedido <strong>#${order.id.slice(0, 8)}</strong> y no pudimos darle curso.</p>
+                    <p><strong>Motivo:</strong> ${safeReason}</p>
+                    <p>Si tenés dudas, respondé este correo y lo vemos juntos.</p>
+                </div>
+            `,
+        });
+        if (response.error) {
+            this.logger.error(`Resend rechazó el aviso de rechazo de arrepentimiento para orden ${order.id}: ${JSON.stringify(response.error)}`);
+        }
+    } catch (error) {
+        this.logger.error(`Error enviando aviso de rechazo de arrepentimiento para orden ${order.id}`, error);
+    }
+}
+
 }

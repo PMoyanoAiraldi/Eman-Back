@@ -650,7 +650,11 @@ async requestWithdrawal(dto: CreateWithdrawalDto): Promise<{ code: string; alrea
         // el motivo solo existe mientras el estado sea "rechazado"
         order.withdrawalRejectionNote = status === withdrawalStatusEnum.RECHAZADO ? cleanNote : null;
 
-        return this.orderRepository.save(order);
+        const saved = await this.orderRepository.save(order);
+            if (status === withdrawalStatusEnum.RECHAZADO && cleanNote) {
+                await this.emailService.sendWithdrawalRejected(saved, cleanNote);
+            }
+            return saved;
     }
 
 
