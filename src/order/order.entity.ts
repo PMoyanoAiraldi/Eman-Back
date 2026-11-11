@@ -36,6 +36,11 @@ export enum cancelReasonEnum {
     CANCELADA_POR_ADMIN = 'cancelada_por_admin',   // cambiada a mano desde el panel
 }
 
+export enum withdrawalStatusEnum {
+    SOLICITADO = 'solicitado',
+    REEMBOLSADO = 'reembolsado',
+    RECHAZADO = 'rechazado',
+}
 
 @Entity({ name: 'order' })
 export class Order {
@@ -169,6 +174,12 @@ export class Order {
 
     @Column({ type: 'boolean', default: false })
     withdrawalOutOfTerm: boolean;
+
+    @Column({ type: 'enum', enum: withdrawalStatusEnum, nullable: true })
+    withdrawalStatus: withdrawalStatusEnum | null;
+
+    @Column({ type: 'timestamp', nullable: true })
+    withdrawalResolvedAt: Date | null;
 
     @ManyToOne(() => Users, (user) => user.orders, { nullable: true }) //para poder comprar sin registro del user
     @JoinColumn({ name: 'userId' })

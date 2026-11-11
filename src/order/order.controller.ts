@@ -6,7 +6,7 @@ import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { RolesGuard } from "src/auth/guards/roles.guard";
 import { Roles } from "src/auth/decorators/roles.decorator";
 import { rolEnum, Users } from "src/users/users.entity";
-import { shippingTypeEnum, stateEnum } from "./order.entity";
+import { shippingTypeEnum, stateEnum, withdrawalStatusEnum } from "./order.entity";
 import { OptionalJwtAuthGuard } from "src/auth/guards/optional-jwt-auth.guard";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CreateWithdrawalDto } from "./dto/create-withdrawal.dto";
@@ -113,7 +113,7 @@ export class OrderController {
     @ApiOperation({ summary: 'Obtener las órdenes de un usuario logueado' })
     @UseGuards(JwtAuthGuard)
     @ApiSecurity('bearer')
-    getOrdersByUser(@Param('userId') userId: string, @Req() req: RequestWithUser) {
+    getOrdersByUser(@Param('userId', ParseUUIDPipe) userId: string, @Req() req: RequestWithUser) {
         if (req.user?.id !== userId) {
             throw new ForbiddenException('No podés ver las compras de otro usuario');
         }
@@ -127,7 +127,7 @@ export class OrderController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
-    findOne(@Param('id') id: string) {
+    findOne(@Param('id', ParseUUIDPipe) id: string) {
         return this.orderService.getOrderById(id)
     }
 
@@ -168,6 +168,18 @@ export class OrderController {
         return this.orderService.updateState(id, state, trackingNumber)
     }
 
+    @Patch(':id/withdrawal')
+    @ApiOperation({ summary: 'Actualizar el estado de un arrepentimiento - Solo Admin' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
+    @ApiSecurity('bearer')
+    updateWithdrawal(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body('status') status: withdrawalStatusEnum,
+    ) {
+        return this.orderService.updateWithdrawalStatus(id, status);
+    }
+
     @Get('mine/:id/summary')
     @ApiOperation({ summary: 'Resumen de una orden propia - Requiere login' })
     @ApiResponse({ status: 200, description: 'Resumen de la orden' })
@@ -175,7 +187,7 @@ export class OrderController {
     @ApiResponse({ status: 404, description: 'Orden no encontrada' })
     @UseGuards(JwtAuthGuard)
     @ApiSecurity('bearer')
-    getMyOrderSummary(@Param('id') id: string, @Req() req: RequestWithUser) {
+    getMyOrderSummary(@Param('id', ParseUUIDPipe) id: string, @Req() req: RequestWithUser) {
         return this.orderService.getOrderSummary(id, req.user?.id)
     }
 
@@ -192,7 +204,7 @@ export class OrderController {
     @ApiResponse({ status: 200, description: 'Orden cancelada correctamente' })
     @ApiResponse({ status: 400, description: 'La orden no está en estado pendiente' })
     @ApiResponse({ status: 404, description: 'Orden no encontrada' })
-    cancelOrder(@Param('id') id: string) {
+    cancelOrder(@Param('id', ParseUUIDPipe) id: string) {
         return this.orderService.cancelOrder(id);
     }
 
@@ -204,7 +216,7 @@ export class OrderController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
-    generateShippingLabel(@Param('id') id: string) {
+    generateShippingLabel(@Param('id', ParseUUIDPipe) id: string) {
         return this.orderService.generateShippingLabel(id);
     }
 
@@ -216,7 +228,7 @@ export class OrderController {
     @ApiSecurity('bearer')
     @ApiConsumes('multipart/form-data')
     @UseInterceptors(FileInterceptor('file'))
-    uploadInvoice(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+    uploadInvoice(@Param('id', ParseUUIDPipe) id: string, @UploadedFile() file: Express.Multer.File) {
         return this.orderService.uploadInvoice(id, file);
     }
 
@@ -225,7 +237,7 @@ export class OrderController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
     @ApiSecurity('bearer')
-    sendInvoiceManually(@Param('id') id: string) {
+    sendInvoiceManually(@Param('id', ParseUUIDPipe) id: string) {
         return this.orderService.sendInvoiceManually(id);
     }
 

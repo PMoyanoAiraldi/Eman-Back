@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { cancelReasonEnum, DeliveryType, invoiceStatusEnum, Order, shippingTypeEnum, stateEnum } from "./order.entity";
+import { cancelReasonEnum, DeliveryType, invoiceStatusEnum, Order, shippingTypeEnum, stateEnum, withdrawalStatusEnum } from "./order.entity";
 import { DataSource, Repository } from "typeorm";
 import { OrderDetail } from "src/orderDetail/orderDetail.entity";
 import { ProductVariants } from "src/productVariants/productVariants.entity";
@@ -613,6 +613,8 @@ async requestWithdrawal(dto: CreateWithdrawalDto): Promise<{ code: string; alrea
     order.withdrawalOutOfTerm = outOfTerm;
     await this.orderRepository.save(order);
 
+    order.withdrawalStatus = withdrawalStatusEnum.SOLICITADO;
+
     // 6. Mails (EmailService atrapa sus errores: un mail caído no rompe la solicitud)
     await Promise.all([
         this.emailService.sendWithdrawalConfirmation(order, code),
@@ -621,5 +623,19 @@ async requestWithdrawal(dto: CreateWithdrawalDto): Promise<{ code: string; alrea
 
     return { code, alreadyRequested: false };
     }   
+
+
+    async updateWithdrawalStatus(id: string, status: withdrawalStatusEnum): Promise<Order> {
+        if (!Object.values(withdrawalStatusEnum).includes(status)) {
+            throw new BadRequestException('Estado de arrepentimiento inválido');
+        }
+        const order = await this.getOrderById(id);
+        if (!order.withdrawalRequestedAt) {
+            throw new BadRequestException('Esta orden no tiene un arrepentimiento solicitado');
+        }
+        order.withdrawalStatus = status;
+        order.withdrawalResolvedAt = status === withdrawalStatusEnum.SOLICITADO ? null : new Date();
+        return this.orderRepository.save(order);
+    }
 }
 
