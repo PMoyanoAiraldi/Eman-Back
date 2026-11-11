@@ -625,7 +625,7 @@ async requestWithdrawal(dto: CreateWithdrawalDto): Promise<{ code: string; alrea
     }   
 
 
-    async updateWithdrawalStatus(id: string, status: withdrawalStatusEnum): Promise<Order> {
+    async updateWithdrawalStatus(id: string, status: withdrawalStatusEnum, note?: string): Promise<Order> {
         if (!Object.values(withdrawalStatusEnum).includes(status)) {
             throw new BadRequestException('Estado de arrepentimiento inválido');
         }
@@ -633,9 +633,26 @@ async requestWithdrawal(dto: CreateWithdrawalDto): Promise<{ code: string; alrea
         if (!order.withdrawalRequestedAt) {
             throw new BadRequestException('Esta orden no tiene un arrepentimiento solicitado');
         }
+
+        const cleanNote = note?.trim() || null;
+            if (status === withdrawalStatusEnum.RECHAZADO) {
+                if (!cleanNote) {
+                    throw new BadRequestException('Tenés que indicar el motivo del rechazo');
+                }
+                if (cleanNote.length > 500) {
+                    throw new BadRequestException('El motivo no puede superar los 500 caracteres');
+                }
+            }
+
         order.withdrawalStatus = status;
         order.withdrawalResolvedAt = status === withdrawalStatusEnum.SOLICITADO ? null : new Date();
+
+        // el motivo solo existe mientras el estado sea "rechazado"
+        order.withdrawalRejectionNote = status === withdrawalStatusEnum.RECHAZADO ? cleanNote : null;
+
         return this.orderRepository.save(order);
     }
+
+
 }
 

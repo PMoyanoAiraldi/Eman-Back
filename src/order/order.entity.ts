@@ -181,6 +181,9 @@ export class Order {
     @Column({ type: 'timestamp', nullable: true })
     withdrawalResolvedAt: Date | null;
 
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    withdrawalRejectionNote: string | null;
+
     @ManyToOne(() => Users, (user) => user.orders, { nullable: true }) //para poder comprar sin registro del user
     @JoinColumn({ name: 'userId' })
     user: Users | null;

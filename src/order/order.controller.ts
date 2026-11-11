@@ -176,8 +176,9 @@ export class OrderController {
     updateWithdrawal(
         @Param('id', ParseUUIDPipe) id: string,
         @Body('status') status: withdrawalStatusEnum,
+        @Body('note') note?: string,
     ) {
-        return this.orderService.updateWithdrawalStatus(id, status);
+        return this.orderService.updateWithdrawalStatus(id, status, note);
     }
 
     @Get('mine/:id/summary')
