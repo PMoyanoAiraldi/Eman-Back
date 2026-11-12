@@ -1,8 +1,9 @@
 import { Products } from '../products/products.entity';
 import { Categories } from '../categories/categories.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 @Entity({ name: 'subcategories' })
+@Unique(['name', 'category'])
 export class SubCategories {
     @PrimaryGeneratedColumn('uuid')
     id: string;

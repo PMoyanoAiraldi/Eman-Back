@@ -6,7 +6,7 @@ export class Brands {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 255, nullable: false})
+  @Column({ length: 255, nullable: false, unique: true})
   name: string;
 
   @Column({ default: true })
