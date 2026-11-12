@@ -1,25 +1,22 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { seedUsers } from './users.seed';
-// import { seedProduct } from './product.seed';
-// import { seedLinea } from './linea.seed';
-// import { seedRubro } from './rubro.seed';
-// import { seedMarca } from './marca.seed';
-// import { seedPrecio } from './precio.seed';
+import { seedBrands } from './brands.seed';
+import { seedProductTypes } from './productTypes.seed';
+import { seedSubCategories } from './subCategories.seed';
+import { seedCategories } from './categories.seed';
+import { seedSizes } from './sizes.seed';
 
 @Module({})
 export class SeedModule implements OnModuleInit {
     constructor(private dataSource: DataSource) {}
 
     async onModuleInit() {
-
-        await seedUsers(this.dataSource); 
-        // await seedLinea(this.dataSource);
-        // await seedMarca(this.dataSource);
-        // await seedRubro(this.dataSource);
-        
-        // await seedProduct(this.dataSource);
-        // await seedPrecio(this.dataSource);
-        
+        await seedCategories(this.dataSource);
+        await seedSubCategories(this.dataSource);
+        await seedProductTypes(this.dataSource);
+        await seedBrands(this.dataSource);
+        await seedSizes(this.dataSource);
+        await seedUsers(this.dataSource);         
     }
 }
