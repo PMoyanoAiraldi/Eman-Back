@@ -5,8 +5,12 @@ import { rolEnum, Users } from 'src/users/users.entity';
 
 
 export const seedUsers = async (dataSource: DataSource) => {
-  if (!process.env.DEVELOPER_EMAIL || !process.env.DEVELOPER_PASSWORD) {
-    throw new Error('Faltan variables de entorno DEVELOPER_EMAIL / DEVELOPER_PASSWORD en el seed');
+  if (
+    !process.env.ADMIN_PASSWORD ||
+    !process.env.DEVELOPER_EMAIL || 
+    !process.env.DEVELOPER_PASSWORD
+  ) {
+    throw new Error('Faltan variables de entorno ADMIN_PASSWORD / DEVELOPER_EMAIL / DEVELOPER_PASSWORD en el seed');
   }
 
   const userRepository = dataSource.getRepository(Users);
@@ -15,7 +19,7 @@ export const seedUsers = async (dataSource: DataSource) => {
     {
             name: process.env.ADMIN_NAME ?? 'Administrador',
             email: process.env.ADMIN_EMAIL ?? 'emantiendaonline@gmail.com',
-            password: process.env.ADMIN_PASSWORD ?? 'Admin*123',
+            password: process.env.ADMIN_PASSWORD,
             streetName: 'Entre Rios',
             streetNumber: '1529',
             city: 'López',
@@ -36,7 +40,9 @@ export const seedUsers = async (dataSource: DataSource) => {
             rol: rolEnum.DEVELOPER,
             state: true,
           },
-        {
+        ]
+        if (process.env.NODE_ENV !== 'production') {
+          users.push({
             name: 'Cliente Prueba',
             email: 'cliente@prueba.com',
             password: 'Cliente*123',
@@ -47,10 +53,9 @@ export const seedUsers = async (dataSource: DataSource) => {
             phone: '111111111',
             rol: rolEnum.CLIENTE,
             state: true,
-        },
-  ];
+          });
+      }
 
-  // Insertar usuarios si no existen
   for (const userData of users) {
     const existingUser = await userRepository.findOne({
       where: { email: userData.email },
@@ -60,9 +65,9 @@ export const seedUsers = async (dataSource: DataSource) => {
       const hashedPassword = await bcrypt.hash(userData.password, 10);
       await userRepository.save(
         userRepository.create({
-                    ...userData,
-                    password: hashedPassword,
-                })
+            ...userData,
+            password: hashedPassword,
+        })
       );
       console.log(`El usuario "${userData.name}" no existe y se insertará.`);
     } else {
