@@ -109,4 +109,7 @@ export class FileUploadService {
                 throw new Error('Tipo de entidad no compatible');
         }
     }
+    getCloudinaryUsage() {
+        return this.cloudinaryService.getUsagePercent();
+    }
 }

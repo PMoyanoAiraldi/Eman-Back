@@ -1,4 +1,4 @@
-import { Controller, Post, Delete, Param, Query, UploadedFile, UseInterceptors, BadRequestException, UseGuards } from '@nestjs/common';
+import { Controller, Post, Delete, Param, Query, UploadedFile, UseInterceptors, BadRequestException, UseGuards, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadService } from './file-upload.service';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -12,7 +12,7 @@ import { MediaType } from 'src/mediaContent/mediaContent.entity';
 type EntityType =  'category' | 'subcategory';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(rolEnum.ADMIN)
+@Roles(rolEnum.ADMIN, rolEnum.DEVELOPER)
 @ApiSecurity('bearer')
 @Controller('file-upload')
 export class FileUploadController {
@@ -48,6 +48,12 @@ export class FileUploadController {
         if (!entityType) throw new BadRequestException('No se proporcionó el tipo de entidad');
 
         return this.fileUploadService.uploadFile(file, entityType, entityId, );
+    }
+
+    @Get('usage')
+    async getUsage() {
+        const percent = await this.fileUploadService.getCloudinaryUsage();
+        return { percent };
     }
 
     @Delete(':publicId')

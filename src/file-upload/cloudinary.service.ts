@@ -8,6 +8,14 @@ interface CloudinaryDestroyResult {
     result: 'ok' | 'not found';
 }
 
+interface CloudinaryUsage {
+    credits?: {
+        usage: number;
+        limit: number;
+        used_percent: number;
+    };
+}
+
 @Injectable()
 export class CloudinaryService {
     constructor(){
@@ -89,5 +97,21 @@ export class CloudinaryService {
         }
     }
 
+    private usageCache: { at: number; percent: number } | null = null;
+
+    async getUsagePercent(): Promise<number | null> {
+    const TTL = 60 * 60 * 1000;
+    if (this.usageCache && Date.now() - this.usageCache.at < TTL) {
+        return this.usageCache.percent;
+    }
+    try {
+        const u = (await cloudinary.api.usage()) as CloudinaryUsage;
+        const percent = u.credits?.used_percent ?? 0;
+        this.usageCache = { at: Date.now(), percent };
+        return percent;
+    } catch {
+        return null; // que un fallo acá nunca rompa el panel
+    }
+    }
 
 }
