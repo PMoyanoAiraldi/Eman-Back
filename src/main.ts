@@ -10,7 +10,7 @@ async function bootstrap() {
   app.use(cookieParser());
   
   app.enableCors({
-    origin: 'http://localhost:5173', // URL de tu frontend
+    origin: process.env.FRONTEND_URL?.split(','), // URL de tu frontend
     credentials: true, //  Imprescindible para que las cookies viajen
   });
 
