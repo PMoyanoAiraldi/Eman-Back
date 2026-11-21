@@ -236,8 +236,13 @@ export class OrderService {
     }
 
     if (filters.search) {
-        query.andWhere('(order.guestName ILIKE :search OR order.guestEmail ILIKE :search)', {
-            search: `%${filters.search}%`,
+        const term = filters.search.trim().replace(/^#/, '');
+
+        query.andWhere(
+            '(order.guestName ILIKE :search OR order.guestEmail ILIKE :search OR CAST(order.id AS text) ILIKE :idSearch)', 
+            {
+                search: `%${filters.search}%`,
+                idSearch: `${term}%`,
         });
     }
 
