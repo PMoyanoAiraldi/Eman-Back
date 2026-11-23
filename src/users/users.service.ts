@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Users } from "./users.entity";
+import { rolEnum, Users } from "./users.entity";
 import { Repository } from "typeorm";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import * as bcrypt from 'bcrypt';
@@ -63,6 +63,8 @@ export class UsersService {
                 'user.email',
                 'user.streetName',
                 'user.streetNumber',
+                'user.floor',
+                'user.apartment',
                 'user.city',
                 'user.provinceCode',
                 'user.phone',
@@ -123,6 +125,10 @@ export class UsersService {
         
         if (!user) {
             throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+        }
+
+        if (user.rol === rolEnum.ADMIN || user.rol === rolEnum.DEVELOPER) {
+            throw new ForbiddenException('No se puede suspender a un administrador o developer');
         }
         
         user.state = state;
