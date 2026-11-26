@@ -4,7 +4,7 @@ import { Brands } from '../brands/brands.entity';
 export const seedBrands = async (dataSource: DataSource) => {
     const repository = dataSource.getRepository(Brands);
 
-    const brands = ['Lotus', 'NASA', 'Mistral'];
+    const brands = ['Lotus', 'NASA', 'Mistral', 'Ringo', 'Heyas', 'Topper'];
 
     for (const name of brands) {
         const existing = await repository.findOne({ where: { name } });

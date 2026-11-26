@@ -11,6 +11,7 @@ export const seedSubCategories = async (dataSource: DataSource) => {
         { category: 'Hombre', names: ['Remera mangas cortas', 'Jeans', 'Abrigos'] },
         { category: 'Mujer', names: ['Remera mangas cortas','Remera mangas largas', 'Jeans', 'Abrigos'] },
         { category: 'Deportivo', names: ['Remera', 'Calza'] },
+        { category: 'Calzado', names: ['Sandalias', 'Zapatillas', 'Zapatos'] },
     ];
 
     for (const group of subCategories) {

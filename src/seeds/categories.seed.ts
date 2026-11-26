@@ -4,7 +4,7 @@ import { Categories } from '../categories/categories.entity';
 export const seedCategories = async (dataSource: DataSource) => {
     const repository = dataSource.getRepository(Categories);
 
-    const categories = ['Hombre', 'Mujer', 'Deportivo'];
+    const categories = ['Hombre', 'Mujer', 'Deportivo', 'Calzado'];
 
     for (const name of categories) {
         const existing = await repository.findOne({ where: { name } });
