@@ -3,7 +3,7 @@ import { Repository, Not } from "typeorm";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Products } from "./products.entity";
 import { Brands } from "src/brands/brands.entity";
-import { Categories } from "src/categories/categories.entity";
+import { Categories, PackagingType } from "src/categories/categories.entity";
 import { SubCategories } from "src/subCategories/subCategories.entity";
 import { ProductTypes } from "src/productTypes/productTypes.entity";
 import { CreateProductDto } from "./dto/create-products.dto";
@@ -69,6 +69,9 @@ export class ProductsService {
             gender: createProductDto.gender,
             isFeatured: createProductDto.isFeatured,
             weightGrams: createProductDto.weightGrams,
+            heightCm: createProductDto.heightCm,
+            widthCm: createProductDto.widthCm,
+            lengthCm: createProductDto.lengthCm,
             brand,
             category,
             subcategory,
@@ -200,9 +203,13 @@ export class ProductsService {
             product.isFeatured = updateProductDto.isFeatured;
         }
 
-        if (updateProductDto.weightGrams !== undefined) {
+        if (updateProductDto.weightGrams != null) {
             product.weightGrams = updateProductDto.weightGrams;
         }
+
+        if (updateProductDto.heightCm !== undefined) product.heightCm = updateProductDto.heightCm;
+        if (updateProductDto.widthCm  !== undefined) product.widthCm  = updateProductDto.widthCm;
+        if (updateProductDto.lengthCm !== undefined) product.lengthCm = updateProductDto.lengthCm;
 
         if (updateProductDto.brandId !== undefined) {
             if (updateProductDto.brandId === null) {
@@ -236,6 +243,15 @@ export class ProductsService {
             }
         }
 
+        
+        if (
+            !product.isDraft &&
+            product.category?.packaging === PackagingType.CAJA &&
+            !(product.heightCm && product.widthCm && product.lengthCm)
+        ) {
+            throw new BadRequestException('Los productos de calzado necesitan las medidas de la caja.');
+        }
+
         return this.productRepository.save(product);
     }
 
@@ -266,7 +282,7 @@ export class ProductsService {
     async publish(id: string): Promise<Products> {
         const product = await this.productRepository.findOne({ 
             where: { id },
-            relations: ['images', 'variants']
+            relations: ['images', 'variants', 'category']
         });
         if (!product) throw new NotFoundException('Producto no encontrado');
 
@@ -275,6 +291,16 @@ export class ProductsService {
         if (!product.variants || product.variants.length === 0) missing.push('variantes (talle/color)');
         else if (!product.variants.some(v => v.stock > 0)) missing.push('stock');
         if (!product.price || Number(product.price) <= 0) missing.push('precio');
+
+        if (!product.weightGrams || product.weightGrams <= 0) missing.push('peso');
+        
+        if (
+            product.category?.packaging === PackagingType.CAJA &&
+            !(product.heightCm && product.widthCm && product.lengthCm)
+        ) {
+            missing.push('medidas de la caja');
+        }
+
 
         if (missing.length > 0) {
             throw new BadRequestException(

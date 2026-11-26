@@ -36,8 +36,17 @@ export class Products {
     @Column({ default: true })
     isDraft: boolean;
 
-    @Column({ type: 'int', default: 200 })
-    weightGrams: number; // gramos — cargado por Andrea al crear el producto, no expuesto al público
+    @Column({ type: 'int' })
+    weightGrams: number; 
+
+    @Column({ type: 'int', nullable: true }) 
+    heightCm: number | null;
+
+    @Column({ type: 'int', nullable: true }) 
+    widthCm: number | null;
+
+    @Column({ type: 'int', nullable: true }) 
+    lengthCm: number | null;
 
     @ManyToOne(() => Brands, (brand) => brand.products)
     @JoinColumn({ name: 'brandId' })

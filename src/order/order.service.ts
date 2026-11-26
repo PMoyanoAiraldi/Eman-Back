@@ -83,10 +83,10 @@ export class OrderService {
 
 
             const pkg = await this.shippingService.calculatePackage(
-                createOrderDto.items.map(item => ({
-                    productId: item.productId,
-                    quantity:  item.quantity,
-                }))
+                variantsToUpdate.map((v, i) => ({
+                productId: v.variant.product.id,
+                quantity: createOrderDto.items[i].quantity,
+            }))
             )
             packageData = {
                 packageWeight: pkg.weight,
@@ -106,7 +106,7 @@ export class OrderService {
                 length: pkg.length,
                 deliveredType: isSucursal ? 'S' : 'D',
             })
-            const rate = rates.find(r => r.deliveredType === (isSucursal ? 'S' : 'D'))
+            const rate = rates.find(r => r.deliveredType === (isSucursal ? 'S' : 'D') && r.productType === 'CP')
             if (!rate) {
                 throw new BadRequestException('No se pudo cotizar el envío para ese código postal')
             }
@@ -160,9 +160,9 @@ export class OrderService {
         // Crear el detalle de la orden
         const detail = manager.create(OrderDetail, {
             orders:      savedOrder,
-            product:     { id: item.productId },
+            product:     { id: variant.product.id },
             variant:     { id: item.variantId },
-            productName: item.productName,
+            productName: variant.product.name,
             quantity:    item.quantity,
             unitPrice:   realUnitPrice,
         })

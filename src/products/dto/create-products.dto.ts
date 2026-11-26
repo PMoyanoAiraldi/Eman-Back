@@ -34,8 +34,25 @@ export class CreateProductDto {
     @IsInt({ message: 'El peso debe ser un número entero' })
     @Min(1, { message: 'El peso debe ser mayor a 0' })
     @Max(25000, { message: 'El peso no puede superar los 25000 gramos' })
-    @IsOptional() // default 200 de la entity
-    weightGrams?: number;
+    weightGrams: number;
+
+    @IsInt({ message: 'La altura debe ser un número entero' })
+    @Min(1, { message: 'La altura debe ser mayor a 0' })
+    @Max(150, { message: 'La altura no puede superar los 150 centimetros' })
+    @IsOptional() 
+    heightCm?: number;
+
+    @IsInt({ message: 'El ancho debe ser un número entero' })
+    @Min(1, { message: 'El ancho debe ser mayor a 0' })
+    @Max(150, { message: 'El ancho no puede superar los 150 centimetros' })
+    @IsOptional() 
+    widthCm?: number;
+
+    @IsInt({ message: 'El largo debe ser un número entero' })
+    @Min(1, { message: 'El largo debe ser mayor a 0' })
+    @Max(150, { message: 'El largo no puede superar los 150 centimetros' })
+    @IsOptional() 
+    lengthCm?: number;
 
     @IsOptional()
     @IsUUID()
